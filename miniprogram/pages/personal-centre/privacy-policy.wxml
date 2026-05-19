@@ -1,0 +1,31 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-kicker">最后更新：2023年10月24日</view>
+    <view class="hero-title">守护您的珍贵回忆与隐私安全</view>
+  </view>
+
+  <view class="card">
+    <view class="section">
+      <view class="section-title">1. 信息收集</view>
+      <view class="text">在您使用服务过程中，我们仅收集实现功能所必需的信息：</view>
+      <view class="bullet">• 图片信息：您主动上传的待修复照片，仅用于 AI 修复处理</view>
+      <view class="bullet">• 设备信息：用于优化显示与兼容性（如系统版本、屏幕信息）</view>
+      <view class="bullet">• 账户信息：仅在登录时记录基础的用户标识，用于同步修复历史</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">2. 存储与安全</view>
+      <view class="text">我们采取行业标准的安全措施保护您的影像数据：</view>
+      <view class="bullet">• 传输加密：上传与下载过程采用加密传输</view>
+      <view class="bullet">• 权限控制：仅您本人可访问自己的修复记录与结果</view>
+      <view class="bullet">• 自动清理：为降低风险，数据会按策略进行清理</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">3. 隐私权利</view>
+      <view class="text">您拥有对个人数据的完全控制权：</view>
+      <view class="bullet">• 您可随时退出登录并清除本地登录状态</view>
+      <view class="bullet">• 您可在历史记录中管理自己的修复结果</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,51 @@
+<view class="page">
+  <view class="header">
+    <view class="title">修复记录</view>
+    <view class="subtitle">您珍藏的记忆，已在此焕发新生。</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <view wx:elif="{{tasks.length === 0}}" class="empty">
+    <view class="empty-title">暂无修复记录</view>
+    <view class="empty-sub">您还没有进行过照片修复。上传第一张老照片，开启时光之旅吧。</view>
+    <button class="btn-primary" bindtap="goHome">立即修复照片</button>
+  </view>
+
+  <view wx:else class="list">
+    <view wx:for="{{tasks}}" wx:key="task_id" class="card">
+      <view class="thumb" bindtap="onView" data-id="{{item.task_id}}">
+        <view wx:if="{{item.result_url}}" class="thumb-before">
+          <image class="img before" src="{{item.reference_image_url}}" mode="aspectFill"></image>
+        </view>
+        <view wx:if="{{item.result_url}}" class="thumb-after">
+          <image class="img after" src="{{item.result_url}}" mode="aspectFill"></image>
+        </view>
+        <view wx:elif="{{item.reference_image_url}}" class="thumb-single">
+          <image class="img single" src="{{item.reference_image_url}}" mode="aspectFill"></image>
+          <view wx:if="{{item.status === 'processing' || item.status === 'submitted' || item.status === 'pending'}}" class="spinner"></view>
+          <view wx:if="{{item.status === 'processing' || item.status === 'submitted' || item.status === 'pending'}}" class="thumb-tip">AI 修复中…</view>
+        </view>
+      </view>
+
+      <view class="meta">
+        <view class="status-row">
+          <view class="status-pill {{item.status}}">
+            <text class="status-dot">●</text>
+            <text>{{item.statusText}}</text>
+          </view>
+        </view>
+
+        <view class="info-row">
+          <view class="info-item">🗓 {{item.dateText}}</view>
+          <view class="info-item">✦ {{item.modeText}}</view>
+        </view>
+
+        <view class="actions">
+          <button class="btn-outline {{!item.result_url ? 'is-disabled' : ''}}" bindtap="onView" data-id="{{item.task_id}}" disabled="{{!item.result_url}}" hover-class="none">查 看</button>
+          <button class="btn-primary small {{item.status !== 'completed' ? 'is-disabled' : ''}}" bindtap="onDownload" data-id="{{item.task_id}}" disabled="{{item.status !== 'completed'}}" hover-class="none">再次下载</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

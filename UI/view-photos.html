@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#77574d",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#2c160e",
+                        "primary-fixed-dim": "#e7bdb1",
+                        "surface": "#fcf9f8",
+                        "tertiary": "#002e68",
+                        "primary-container": "#5d4037",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#d4ada1",
+                        "surface-dim": "#dcd9d9",
+                        "surface-variant": "#e4e2e1",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#90b5ff",
+                        "tertiary-container": "#004493",
+                        "on-secondary-container": "#636451",
+                        "on-secondary-fixed-variant": "#474836",
+                        "secondary-container": "#e1e1c9",
+                        "outline": "#827470",
+                        "error-container": "#ffdad6",
+                        "primary": "#442a22",
+                        "on-tertiary-fixed": "#001a41",
+                        "inverse-primary": "#e7bdb1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#1b1c1c",
+                        "surface-container-highest": "#e4e2e1",
+                        "secondary-fixed": "#e4e4cc",
+                        "secondary": "#5e604d",
+                        "inverse-surface": "#303030",
+                        "surface-container": "#f0eded",
+                        "tertiary-fixed": "#d8e2ff",
+                        "on-secondary-fixed": "#1b1d0e",
+                        "on-primary-fixed-variant": "#5d4037",
+                        "on-surface-variant": "#504441",
+                        "primary-fixed": "#ffdbd0",
+                        "on-tertiary-fixed-variant": "#004493",
+                        "background": "#fcf9f8",
+                        "outline-variant": "#d4c3be",
+                        "surface-container-low": "#f6f3f2",
+                        "on-background": "#1b1c1c",
+                        "tertiary-fixed-dim": "#adc7ff",
+                        "surface-bright": "#fcf9f8",
+                        "inverse-on-surface": "#f3f0f0",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#c8c8b0",
+                        "surface-container-high": "#eae7e7",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-page": "20px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Newsreader"],
+                        "label-lg": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-lg-mobile": ["Newsreader"],
+                        "headline-lg": ["Newsreader"],
+                        "body-md": ["Manrope"],
+                        "headline-md": ["Newsreader"],
+                        "label-sm": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "label-lg": ["14px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["26px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["30px", {"lineHeight": "38px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>.paper-grain {
+    background-color: #fcf9f8;
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuCS4aHTY0YMLBQdcR0zBqQFcu98cGuJ8dLJGcQAWwd9L414xs2QrTkFQcTrpf-ej8S4o7BnUIKT2NsiA47eT8BoN1L20e5QAjGTLlDOaU9Zre2F9eVOCkQLngUrTCa-ewVWAUqFzkUsNos_zue8xjHSxGelTyie_efScYBpzr98dzcL6CMYpi57Xh37E32AHWuYGW86LyasgIgtcZuEHABeUUUxOYl4alVKcMiYxe_3zYHaznVuz8c9VNVxHZnhY5lpTS4IJdZ6QSCx)
+    }
+.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="text-on-surface min-h-screen flex flex-col" style="background-color: #fcf9f8;">
+<!-- TopAppBar -->
+<header class="bg-surface-container dark:bg-surface-container-highest border-b border-outline-variant/30 shadow-sm docked full-width top-0 z-40 flex justify-between items-center w-full px-margin-page h-16">
+<button class="active:scale-95 transition-transform duration-150 text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-full">
+<span class="material-symbols-outlined" data-icon="menu">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-semibold text-primary dark:text-primary-fixed">查看照片</h1>
+<button class="active:scale-95 transition-transform duration-150 text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-full">
+
+</button>
+</header>
+<main class="flex-1 flex flex-col px-margin-page py-stack-lg gap-stack-lg pb-32">
+<!-- Large Restored Photo Section -->
+<section class="flex flex-col gap-stack-sm">
+<div class="relative w-full rounded-xl overflow-hidden shadow-lg bg-surface-container-high aspect-[3/4]">
+<img class="w-full h-full object-cover" data-alt="A high-quality professionally restored portrait of an elderly person from the mid-20th century. The lighting is warm and cinematic, highlighting sharp facial features and clear skin textures with museum-quality precision. The color palette is rich and natural, moving away from faded sepia to lifelike tones while retaining a nostalgic atmosphere. The background is a soft, out-of-focus interior that complements the sharp subject." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCByz56arMyVCKqMEMb6krhsqVEVKHYdsRCHQQUqXVvHe9lobUHyFne3iYdjBDsAvRGoE12JWe73XNW-yVumCLbEJ_mpL4IYOMWbFUYdIbUTqAG3EspxPAjV1n4vnVUGgXoCQVz_SiLXHRxMPBFTdXeLFdK8ej8v8YlX0mt9SlWiktRA1agunB8tt6oh6G5quMza45Fa-2k0CiBBHIcnhcnjIsYTJ1x_tTF8X1NN25622Eswqj6EcOP0PaU36wqZcwPgm7M8spywNJq">
+<div class="absolute top-4 left-4">
+<span class="bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1 rounded-full font-label-sm text-label-sm text-primary border border-outline-variant/50 uppercase">
+                        修复后
+                    </span>
+</div>
+</div>
+</section>
+<!-- Download Action -->
+<section class="flex flex-col">
+<button class="bg-tertiary dark:bg-tertiary-container text-on-tertiary dark:text-on-tertiary-container w-full py-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+<span class="font-label-lg text-label-lg">下载修复后的照片</span>
+</button>
+<p class="mt-2 text-center font-label-sm text-label-sm text-on-surface-variant">
+                高清无水印原图已保存在您的账户
+            </p>
+</section>
+<!-- Original Photo Section -->
+<section class="flex flex-col gap-stack-sm mt-stack-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">原始照片</h3>
+<span class="text-on-surface-variant font-label-sm text-label-sm">上传于 2023.10.15</span>
+</div>
+<div class="relative w-1/2 rounded-lg overflow-hidden border border-outline-variant/50 shadow-sm bg-surface-variant aspect-[3/4]">
+<img class="w-full h-full object-cover grayscale opacity-80" data-alt="A faded, grainy, and scratched old analog photograph showing the same subject as the restored version. The edges are frayed, and there is a heavy sepia tint with visible dust and crease marks across the center. The lighting is flat and the details are blurred, capturing the worn texture of physical photographic paper from decades ago. The aesthetic is purely historical and unrepaired." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnWOm0SvIy7d_3XwffTsvtxiDqssyP_bmLXsfTmJvoMvG-A2V3Wes1T20y6Sd4_s1RveezAoOKCL68aooZz58zLADWD-yZkp34Htr-1VaiCzLEJzHNjvPBZf4O675W8VlKR6znLhDPf_vLotb3ZIvURB5r286It4lqdyQrsXbns_eXc5EKhzcwj684UJTPIvu61d10BFiToE2rskRwcZch1QqApCQCM4ZxThdchOcyM6Rx8p0B2v99V42FJuydTF7lujxUFSxxF7Uo">
+<div class="absolute inset-0 bg-primary/5"></div>
+<div class="absolute bottom-2 right-2">
+<span class="material-symbols-outlined text-white/50 text-lg" data-icon="history">history</span>
+</div>
+</div>
+</section>
+<!-- Back Action -->
+<section class="flex flex-col mt-stack-lg border-t border-outline-variant/20 pt-stack-lg">
+<button class="bg-transparent border-2 border-outline text-on-surface-variant w-full py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-surface-variant/30 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<span class="font-label-lg text-label-lg">返回历史列表</span>
+</button>
+</section>
+</main>
+<!-- BottomNavBar (Hidden on desktop, shown on mobile as per logic) -->
+<nav class="bg-surface-bright shadow-[0_-4px_15px_rgba(0,0,0,0.08)] text-tertiary-fixed-dim fixed bottom-0 w-full z-50 rounded-t-xl flex justify-around items-center pb-safe pt-2 px-gutter md:hidden h-[80px]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: &quot;FILL&quot; 0;">home</span>
+<span class="font-label-sm text-label-sm">首页</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-tertiary-container text-on-tertiary-container rounded-full px-6 py-1 active:scale-90 transition-all duration-200 shadow-inner" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: &quot;FILL&quot; 1;">history</span>
+<span class="font-label-sm text-label-sm font-semibold">修复记录</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: &quot;FILL&quot; 0;">person</span>
+<span class="font-label-sm text-label-sm">我的</span>
+</a>
+</nav>
+
+
+</body></html>

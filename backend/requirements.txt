@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+asyncpg
+pydantic-settings
+redis
+httpx
+python-multipart
+requests
+pyyaml
+oss2
+volcengine-python-sdk[ark]
+python-jose[cryptography]
+passlib[bcrypt]
+boto3

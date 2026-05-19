@@ -1,0 +1,18 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  <view wx:else>
+    <view class="list">
+      <view wx:for="{{orders}}" wx:key="id" class="item">
+        <view class="left">
+          <view class="time">{{item.timeText}}</view>
+          <view class="name">账户充值</view>
+        </view>
+        <view class="amount">+¥{{item.amountText}}</view>
+      </view>
+    </view>
+    <button class="more-btn" bindtap="onLoadMore" disabled="{{loadingMore || noMore}}">
+      {{noMore ? '没有更多了' : '查看更多充值记录'}}
+      <text class="arrow">⌄</text>
+    </button>
+  </view>
+</view>

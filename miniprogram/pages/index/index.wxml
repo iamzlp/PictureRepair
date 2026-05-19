@@ -1,0 +1,90 @@
+<view class="page">
+  <view class="hero">
+    <text class="hero-title">重温美好回忆</text>
+    <text class="hero-subtitle">上传老旧照片，使用先进的 AI 技术进行修复。</text>
+  </view>
+
+  <view class="card upload-card">
+    <view class="upload-preview">
+      <view wx:if="{{!localImage}}" class="upload-placeholder"></view>
+      <image wx:else class="upload-image" src="{{localImage}}" mode="aspectFill"></image>
+    </view>
+    <view class="upload-text">
+      <text class="upload-title">上传照片</text>
+      <text class="upload-note">支持 JPG、PNG 格式（最大10MB）</text>
+    </view>
+    <view class="upload-actions">
+      <view class="upload-action-btn {{uploading ? 'disabled' : ''}}" bindtap="onTakePhoto">拍一张</view>
+      <view class="upload-action-btn {{uploading ? 'disabled' : ''}}" bindtap="onPickFromAlbum">相册导入</view>
+    </view>
+  </view>
+
+  <view class="mode-tabs">
+    <view class="mode-tab {{mode === 'enhance' ? 'active' : ''}}" data-mode="enhance" bindtap="onModeTap">图片清晰</view>
+    <view class="mode-tab {{mode === 'colorize' ? 'active' : ''}}" data-mode="colorize" bindtap="onModeTap">黑白上色</view>
+  </view>
+
+  <view class="card input-card">
+    <textarea class="extra-input" maxlength="200" value="{{extraPrompt}}" bindinput="onExtraInput" placeholder="备注，补充修复要求"></textarea>
+  </view>
+
+  <button class="start-btn" loading="{{creating || polling}}" disabled="{{!canCreate}}" bindtap="onCreateRepair">
+    {{actionText}}
+  </button>
+
+  <view wx:if="{{taskId || resultUrl}}" class="card result-card">
+    <view class="card-head">
+      <text class="card-title">修复结果预览</text>
+      <text class="card-meta">{{statusText || '等待开始'}}</text>
+    </view>
+
+    <view class="result-frame" bindtap="onPreviewResult">
+      <image wx:if="{{resultUrl}}" class="result-image" src="{{resultUrl}}" mode="aspectFit"></image>
+      <view wx:elif="{{localImage}}" class="result-placeholder">
+        <image class="result-image" src="{{localImage}}" mode="aspectFit"></image>
+      </view>
+      <view wx:else class="result-placeholder">img</view>
+    </view>
+
+    <view class="progress-row">
+      <text class="progress-label">修复进度</text>
+      <text class="progress-value">{{progress}}%</text>
+    </view>
+    <view class="progress-track">
+      <view class="progress-fill" style="width: {{progress}}%;"></view>
+    </view>
+    <view wx:if="{{status === 'failed'}}" class="error-text">{{errorMessage || statusText}}</view>
+
+    <view class="result-actions">
+      <button class="btn btn-ghost {{!resultUrl ? 'is-disabled' : ''}}" bindtap="onPreviewResult" disabled="{{!resultUrl}}" hover-class="none">查看大图</button>
+      <button class="btn btn-primary {{status !== 'completed' ? 'is-disabled' : ''}}" bindtap="onExportResult" disabled="{{status !== 'completed'}}" hover-class="none">下载高清</button>
+    </view>
+  </view>
+
+  <view class="card steps-card">
+    <view class="steps-title">操作步骤</view>
+    <view class="steps">
+      <view class="step">
+        <view class="step-badge">1</view>
+        <view class="step-body">
+          <text class="step-name">上传照片</text>
+          <text class="step-desc">从设备中选择一张老旧或模糊的照片。</text>
+        </view>
+      </view>
+      <view class="step">
+        <view class="step-badge">2</view>
+        <view class="step-body">
+          <text class="step-name">AI 智能处理</text>
+          <text class="step-desc">我们将使用 AI 自动分析并修复照片细节。</text>
+        </view>
+      </view>
+      <view class="step">
+        <view class="step-badge">3</view>
+        <view class="step-body">
+          <text class="step-name">保存与分享</text>
+          <text class="step-desc">将高清修复后的照片下载保存到相册。</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,85 @@
+services:
+  # -------------------------------------------------------------------
+  # 1. PostgreSQL (主数据库)
+  # -------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-budtrip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-budtrip_password}
+      POSTGRES_DB: ${POSTGRES_DB:-pictureRepair}
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-budtrip}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 2. Redis (缓存与任务队列)
+  # -------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "${REDIS_PORT:-16379}:6379"
+    volumes:
+      - ./redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 3. MinIO (本地对象存储 - 模拟 S3)
+  # -------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    restart: always
+    ports:
+      - "${MINIO_API_EXPOSE_PORT:-19000}:9000" # API 端口
+      - "${MINIO_CONSOLE_EXPOSE_PORT:-19001}:9001" # 控制台端口
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-picturerepair_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_password_123}
+    volumes:
+      - ./minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # -------------------------------------------------------------------
+  # 4. Create Buckets (MinIO 初始化脚本)
+  # -------------------------------------------------------------------
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ROOT_USER:-budtrip_minio} ${MINIO_ROOT_PASSWORD:-minio_password_123};
+      until /usr/bin/mc ls myminio >/dev/null 2>&1; do echo 'waiting for minio...'; sleep 1; done;
+      /usr/bin/mc mb -p myminio/${MINIO_BUCKET_NAME:-picturerepair-assets} || true;
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET_NAME:-picturerepair-assets} || true;
+      /usr/bin/mc cors set myminio/${MINIO_BUCKET_NAME:-picturerepair-assets} /cors.json << EOF
+      [
+          {
+              \"AllowedOrigins\": [\"*\"],
+              \"AllowedMethods\": [\"GET\", \"HEAD\"],
+              \"AllowedHeaders\": [\"*\"],
+              \"ExposeHeaders\": [\"ETag\"]
+          }
+      ]
+      EOF;
+      exit 0;
+      "
+
+# -------------------------------------------------------------------
+# Volumes (持久化数据卷)
+# -------------------------------------------------------------------
+# 注意: 我们已经在 .gitignore 中忽略了 postgres_data, redis_data, minio_data
+# 这里不需要定义命名卷，直接挂载到当前目录即可，方便查看数据

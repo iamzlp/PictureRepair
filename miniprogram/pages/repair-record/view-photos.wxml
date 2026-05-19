@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="frame" bindtap="onPreviewAfter">
+    <image wx:if="{{resultUrl}}" class="image" src="{{resultUrl}}" mode="aspectFit"></image>
+    <view wx:else class="placeholder">暂无结果</view>
+    <view class="badge">修复后</view>
+  </view>
+
+  <button class="download-btn" loading="{{exporting}}" bindtap="onDownload" disabled="{{!resultUrl}}">
+    下载修复后的照片
+  </button>
+  <view class="download-tip">高清无水印原图已保存在您的账户</view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title">原始照片</view>
+      <view class="section-meta">上传于 {{dateText}}</view>
+    </view>
+    <view class="origin">
+      <image wx:if="{{sourceUrl}}" class="origin-img" src="{{sourceUrl}}" mode="aspectFit" bindtap="onPreviewBefore"></image>
+    </view>
+  </view>
+
+  <button class="back-btn" bindtap="goBack">返回历史列表</button>
+</view>

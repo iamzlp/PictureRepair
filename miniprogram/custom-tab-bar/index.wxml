@@ -1,0 +1,18 @@
+<view class="tabbar">
+  <view class="tabbar-inner">
+    <view class="tab-item {{selected === 0 ? 'active' : ''}}" data-index="0" bindtap="onTabTap">
+      <view class="tab-icon">⌂</view>
+      <view class="tab-label">首页</view>
+    </view>
+    <view class="tab-item {{selected === 1 ? 'active-mid' : ''}}" data-index="1" bindtap="onTabTap">
+      <view class="tab-mid">
+        <view class="tab-icon">↺</view>
+      </view>
+      <view class="tab-label">修复记录</view>
+    </view>
+    <view class="tab-item {{selected === 2 ? 'active' : ''}}" data-index="2" bindtap="onTabTap">
+      <view class="tab-icon">☺</view>
+      <view class="tab-label">我的</view>
+    </view>
+  </view>
+</view>

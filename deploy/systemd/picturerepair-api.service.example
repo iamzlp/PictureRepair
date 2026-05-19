@@ -1,0 +1,22 @@
+[Unit]
+Description=PictureRepair FastAPI Service
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/picturerepair
+EnvironmentFile=/opt/picturerepair/.env
+ExecStart=/opt/picturerepair/.venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# 建议输出到 journald，便于 journalctl 查看
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

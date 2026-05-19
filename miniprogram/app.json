@@ -1,0 +1,43 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/repair-record/index",
+    "pages/personal-centre/index",
+    "pages/repair-record/view-photos",
+    "pages/auth/login",
+    "pages/personal-centre/recharge",
+    "pages/personal-centre/recharge-records",
+    "pages/personal-centre/help-feedback",
+    "pages/personal-centre/service-agreement",
+    "pages/personal-centre/privacy-policy"
+  ],
+  "window": {
+    "navigationBarTitleText": "照片修复",
+    "navigationBarBackgroundColor": "#fcf9f8",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#fcf9f8"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#827470",
+    "selectedColor": "#442a22",
+    "backgroundColor": "#fcf9f8",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/repair-record/index",
+        "text": "修复记录"
+      },
+      {
+        "pagePath": "pages/personal-centre/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

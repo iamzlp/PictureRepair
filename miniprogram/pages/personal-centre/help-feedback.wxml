@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-icon">？</view>
+    <view class="hero-title">我们能帮您什么？</view>
+    <view class="hero-sub">浏览常见问题或直接向我们发送反馈建议。</view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">常见问题</view>
+    <view class="faq">
+      <view class="faq-item">
+        <view class="faq-title">如何上传照片？</view>
+        <view class="faq-desc">选择“修复”功能，点击中心框选区域即可从相册选取。</view>
+      </view>
+      <view class="faq-item">
+        <view class="faq-title">支付问题？</view>
+        <view class="faq-desc">请检查微信支付历史记录，或在账号页面尝试恢复购买。</view>
+      </view>
+      <view class="faq-item">
+        <view class="faq-title">我的修复记录在哪？</view>
+        <view class="faq-desc">您可以在“修复记录”标签页查看所有之前的修复过的图片。</view>
+      </view>
+      <view class="faq-item">
+        <view class="faq-title">画质设置？</view>
+        <view class="faq-desc">目前提供“画质增强”和“黑白上色”，后续会支持更多精细参数。</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">提交反馈</view>
+    <view class="form">
+      <view class="form-row">
+        <view class="label">问题类型</view>
+        <picker class="picker" range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
+          <view class="picker-value">{{types[typeIndex]}}</view>
+        </picker>
+        <view class="chev">⌄</view>
+      </view>
+      <view class="divider"></view>
+      <view class="form-row col">
+        <view class="label">详细描述</view>
+        <textarea class="textarea" value="{{content}}" bindinput="onContentInput" placeholder="请详细描述您遇到的问题或建议..." maxlength="500"></textarea>
+      </view>
+    </view>
+    <button class="submit-btn" bindtap="onSubmit">提交反馈</button>
+  </view>
+
+  <view class="support">
+    <view class="support-left">
+      <view class="support-title">需要人工支持？</view>
+      <view class="support-desc">咨询我们的老照片修复专家。</view>
+    </view>
+    <button class="support-btn" bindtap="onSupport">在线咨询</button>
+  </view>
+</view>

@@ -1,0 +1,93 @@
+.page {
+  min-height: 100vh;
+  padding: 28rpx 28rpx 200rpx;
+  box-sizing: border-box;
+  background: #fcf9f8;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(212, 195, 190, 0.5);
+  box-shadow: 0 8rpx 30rpx rgba(68, 42, 34, 0.08);
+  overflow: hidden;
+}
+
+.head {
+  padding: 26rpx 26rpx 18rpx;
+  background: rgba(240, 237, 237, 0.55);
+}
+
+.kicker {
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: rgba(68, 42, 34, 0.6);
+}
+
+.title {
+  margin-top: 10rpx;
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #442a22;
+}
+
+.content {
+  padding: 26rpx;
+}
+
+.section {
+  margin-bottom: 22rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #1b1c1c;
+}
+
+.section-text {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #504441;
+}
+
+.bullet {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #504441;
+}
+
+.note {
+  padding: 18rpx;
+  border-left: 6rpx solid #442a22;
+  background: rgba(228, 226, 225, 0.25);
+  border-radius: 18rpx;
+}
+
+.footer {
+  margin-top: 10rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: rgba(80, 68, 65, 0.6);
+}
+
+.agree-btn {
+  margin-top: 26rpx;
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 999rpx;
+  background: #442a22;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.agree-tip {
+  margin-top: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: rgba(80, 68, 65, 0.7);
+}

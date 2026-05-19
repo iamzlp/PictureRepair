@@ -1,0 +1,304 @@
+<!DOCTYPE html><html lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>老照片修复</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#dcd9d9",
+                    "secondary": "#5e604d",
+                    "on-surface": "#1b1c1c",
+                    "tertiary": "#002e68",
+                    "on-secondary-fixed-variant": "#474836",
+                    "surface-container": "#f0eded",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#303030",
+                    "on-background": "#1b1c1c",
+                    "surface-tint": "#77574d",
+                    "primary-fixed": "#ffdbd0",
+                    "surface-variant": "#e4e2e1",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#fcf9f8",
+                    "surface-container-high": "#eae7e7",
+                    "on-primary-fixed-variant": "#5d4037",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#e7bdb1",
+                    "inverse-primary": "#e7bdb1",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#90b5ff",
+                    "primary": "#442a22",
+                    "on-surface-variant": "#504441",
+                    "surface": "#fcf9f8",
+                    "surface-container-highest": "#e4e2e1",
+                    "on-primary-fixed": "#2c160e",
+                    "on-tertiary-fixed-variant": "#004493",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#f3f0f0",
+                    "on-primary-container": "#d4ada1",
+                    "on-tertiary-fixed": "#001a41",
+                    "secondary-fixed": "#e4e4cc",
+                    "on-secondary-fixed": "#1b1d0e",
+                    "surface-container-low": "#f6f3f2",
+                    "on-secondary-container": "#636451",
+                    "primary-container": "#5d4037",
+                    "tertiary-fixed": "#d8e2ff",
+                    "outline-variant": "#d4c3be",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#c8c8b0",
+                    "tertiary-fixed-dim": "#adc7ff",
+                    "tertiary-container": "#004493",
+                    "background": "#fcf9f8",
+                    "secondary-container": "#e1e1c9",
+                    "outline": "#827470"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "24px",
+                    "gutter": "12px",
+                    "stack-md": "16px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "margin-page": "20px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Newsreader"
+                    ],
+                    "label-lg": [
+                            "Manrope"
+                    ],
+                    "headline-sm": [
+                            "Newsreader"
+                    ],
+                    "headline-lg-mobile": [
+                            "Newsreader"
+                    ],
+                    "label-sm": [
+                            "Manrope"
+                    ],
+                    "body-lg": [
+                            "Manrope"
+                    ],
+                    "headline-md": [
+                            "Newsreader"
+                    ],
+                    "body-md": [
+                            "Manrope"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "38px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-lg": [
+                            "14px",
+                            {
+                                    "lineHeight": "18px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "26px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.04em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            /* Warm Cream background with subtle paper grain texture simulation */
+            background-color: #fcf9f8;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+        /* Soft shadow for cards */
+        .soft-shadow {
+            box-shadow: 0px 4px 15px rgba(27, 28, 28, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="text-on-background min-h-screen flex flex-col font-body-lg">
+<!-- TopAppBar (WeChat Style) -->
+<header class="bg-surface-container/80 backdrop-blur-md text-on-surface w-full h-[44px] flex items-center justify-center sticky top-0 z-40 border-b border-outline-variant/20 pt-[env(safe-area-inset-top)]">
+<h1 class="text-[17px] font-medium tracking-wide">照片修复</h1>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow flex flex-col px-margin-page py-stack-md gap-stack-md pb-28">
+<!-- Hero / Context -->
+<section class="text-center mb-2">
+<h2 class="text-[22px] font-semibold text-primary mb-2">重温美好回忆</h2>
+<p class="font-body-md text-[13px] text-on-surface-variant max-w-sm mx-auto">上传老旧照片，使用先进的AI技术进行修复。</p>
+</section>
+<!-- Upload Area -->
+<section class="relative bg-surface-container-lowest border border-outline-variant/60 rounded-2xl soft-shadow p-6 flex flex-col items-center justify-center text-center">
+<div class="bg-primary-container/10 p-4 rounded-full mb-3">
+<span class="material-symbols-outlined text-primary text-[36px]" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<h3 class="text-[16px] font-medium text-primary mb-1">上传照片</h3>
+<p class="text-[12px] text-on-surface-variant mb-6">支持 JPG, PNG 格式 (最大10MB)</p>
+<div class="flex w-full gap-4 mt-2">
+<button class="flex-1 bg-primary text-on-primary text-[15px] font-medium py-3 rounded-full flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="photo_camera">photo_camera</span>
+                    拍一张
+                </button>
+<button class="flex-1 bg-surface-container-lowest text-primary border border-primary text-[15px] font-medium py-3 rounded-full flex items-center justify-center gap-2 hover:bg-surface-variant/50 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="image">image</span>
+                    相册导入
+                </button>
+</div>
+</section>
+<!-- Core Actions -->
+<section class="flex w-full gap-4 mt-2">
+<!-- Image Clarity Action - Selected State -->
+<button class="flex-1 bg-tertiary text-on-tertiary rounded-2xl px-4 flex flex-col items-center justify-center gap-3 soft-shadow active:scale-[0.98] transition-all py-3">
+<span class="text-[15px] font-medium">图片清晰</span>
+</button>
+<!-- B&W Colorization Action - Unselected State -->
+<button class="flex-1 bg-surface-container-lowest text-primary border border-outline-variant/60 rounded-2xl px-4 flex flex-col items-center justify-center gap-3 soft-shadow active:scale-[0.98] transition-all py-3">
+<span class="text-[15px] font-medium">黑白上色</span>
+</button>
+</section>
+<!-- How it works -->
+<section class="flex flex-col gap-4 mt-2 mb-2 w-full"><textarea class="w-full p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/60 text-[14px] text-on-surface-variant focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] outline-none transition-all" placeholder="备选，补充修复要求"></textarea><button class="w-full bg-primary text-on-primary text-[16px] font-semibold py-4 rounded-full shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined" data-icon="auto_fix_high">auto_fix_high</span>开始修复</button></section><section class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl soft-shadow p-5 mt-2 flex flex-col items-center gap-4">
+<div class="w-full flex justify-between items-center">
+<h3 class="text-[15px] font-medium text-primary">修复结果预览</h3>
+<span class="text-[12px] text-on-surface-variant">修复完成</span>
+</div>
+<div class="w-full aspect-[4/3] bg-surface-container-low rounded-xl overflow-hidden flex items-center justify-center border border-outline-variant/20 shadow-inner">
+<img alt="修复预览" class="w-full h-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+</div><div class="w-full mt-4 space-y-1.5">
+  <div class="flex justify-between items-center">
+    <span class="text-label-sm text-on-surface-variant font-medium">修复进度</span>
+    <span class="text-label-sm text-primary font-bold">80%</span>
+  </div>
+  <div class="w-full h-2 bg-surface-dim rounded-full overflow-hidden">
+    <div class="bg-primary h-full rounded-full" style="width: 80%;"></div>
+  </div>
+</div>
+<div class="flex w-full gap-3">
+<button class="flex-1 bg-surface-container-low text-primary text-[14px] font-medium py-2.5 rounded-full border border-outline-variant/40 hover:bg-surface-variant/50 transition-colors shadow-sm">
+      查看大图
+    </button>
+<button class="flex-1 bg-primary text-on-primary text-[14px] font-medium py-2.5 rounded-full hover:bg-primary/90 transition-colors shadow-sm">
+      下载高清
+    </button>
+</div>
+</section><section class="bg-surface-container-low rounded-2xl p-5 soft-shadow mt-2">
+<h3 class="text-[15px] font-medium text-primary mb-4 pb-2 border-b border-outline-variant/20">操作步骤</h3>
+<div class="space-y-4">
+<div class="flex items-start gap-4">
+<div class="bg-secondary-container text-on-secondary-container w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="upload_file">upload_file</span>
+</div>
+<div>
+<h4 class="text-[14px] font-medium text-on-surface mb-1">1. 上传照片</h4>
+<p class="text-[13px] text-on-surface-variant">从设备中选择一张老旧或破损的照片。</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="bg-primary-container text-on-primary-container w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="memory">memory</span>
+</div>
+<div>
+<h4 class="text-[14px] font-medium text-on-surface mb-1">2. AI 智能处理</h4>
+<p class="text-[13px] text-on-surface-variant">我们的高级AI将自动分析并修复照片细节。</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="bg-tertiary-container text-on-tertiary-container w-8 h-8 rounded-full shrink-0 flex items-center justify-center mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+</div>
+<div>
+<h4 class="text-[14px] font-medium text-on-surface mb-1">3. 保存与分享</h4>
+<p class="text-[13px] text-on-surface-variant">将高清修复后的照片下载保存到您的相册。</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (WeChat Style) -->
+<nav class="bg-surface-container-lowest text-on-surface-variant fixed bottom-0 w-full z-50 border-t border-outline-variant/30 flex justify-around items-center pb-[max(env(safe-area-inset-bottom),16px)] pt-2 px-2">
+<!-- Active Tab: Home -->
+<button class="flex flex-col items-center justify-center text-primary w-16 transition-all">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="home" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+<span class="text-[10px] font-medium">首页</span>
+</button>
+<!-- Inactive Tab: History -->
+<button class="flex flex-col items-center justify-center hover:text-primary transition-all w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="history">history</span>
+<span class="text-[10px] font-medium">修复记录</span>
+</button>
+<!-- Inactive Tab: Account -->
+<button class="flex flex-col items-center justify-center hover:text-primary transition-all w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="person">person</span>
+<span class="text-[10px] font-medium">我的</span>
+</button>
+</nav>
+
+
+
+
+</body></html>

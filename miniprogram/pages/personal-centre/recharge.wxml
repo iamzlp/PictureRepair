@@ -1,0 +1,29 @@
+<view class="page">
+  <view class="mask"></view>
+  <view class="card">
+    <view class="close" bindtap="onClose">×</view>
+    <view class="dot"></view>
+    <view class="title">保存更多记忆</view>
+    <view class="subtitle">选择套餐继续以高质量修复您的照片</view>
+
+    <view class="plans">
+      <view wx:for="{{packages}}" wx:key="id" class="plan {{selectedId === item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+        <view class="radio {{selectedId === item.id ? 'on' : ''}}"></view>
+        <view class="plan-body">
+          <view class="plan-name">{{item.title}}</view>
+          <view class="plan-desc">{{item.subtitle}}</view>
+        </view>
+        <view class="plan-price">
+          <view class="price-main">¥{{item.priceText}}</view>
+          <view class="price-sub">{{item.unitPriceText}}</view>
+        </view>
+        <view wx:if="{{item.recommended}}" class="badge">最佳推荐</view>
+      </view>
+    </view>
+
+    <button class="pay-btn" loading="{{paying}}" bindtap="onPay" disabled="{{!selectedId}}">
+      立即支付
+    </button>
+    <view class="pay-tip">微信支付安全加密</view>
+  </view>
+</view>

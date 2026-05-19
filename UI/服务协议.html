@@ -1,0 +1,240 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#d4ada1",
+                    "surface-dim": "#dcd9d9",
+                    "primary-fixed-dim": "#e7bdb1",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#2c160e",
+                    "surface-tint": "#77574d",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "tertiary": "#002e68",
+                    "primary-container": "#5d4037",
+                    "surface": "#fcf9f8",
+                    "surface-container-highest": "#e4e2e1",
+                    "on-surface": "#1b1c1c",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#5e604d",
+                    "inverse-surface": "#303030",
+                    "secondary-fixed": "#e4e4cc",
+                    "tertiary-container": "#004493",
+                    "on-secondary-container": "#636451",
+                    "on-tertiary-container": "#90b5ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#e4e2e1",
+                    "primary": "#442a22",
+                    "on-tertiary-fixed": "#001a41",
+                    "inverse-primary": "#e7bdb1",
+                    "secondary-container": "#e1e1c9",
+                    "outline": "#827470",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed-variant": "#474836",
+                    "primary-fixed": "#ffdbd0",
+                    "on-tertiary-fixed-variant": "#004493",
+                    "outline-variant": "#d4c3be",
+                    "background": "#fcf9f8",
+                    "on-primary-fixed-variant": "#5d4037",
+                    "tertiary-fixed": "#d8e2ff",
+                    "on-secondary-fixed": "#1b1d0e",
+                    "surface-container": "#f0eded",
+                    "on-surface-variant": "#504441",
+                    "inverse-on-surface": "#f3f0f0",
+                    "tertiary-fixed-dim": "#adc7ff",
+                    "surface-bright": "#fcf9f8",
+                    "surface-container-high": "#eae7e7",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#c8c8b0",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f6f3f2",
+                    "on-background": "#1b1c1c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "margin-page": "20px",
+                    "stack-sm": "8px",
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "gutter": "12px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Newsreader"],
+                    "label-sm": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "body-lg": ["Manrope"],
+                    "headline-lg-mobile": ["Newsreader"],
+                    "headline-lg": ["Newsreader"],
+                    "headline-sm": ["Newsreader"],
+                    "label-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["26px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["30px", {"lineHeight": "38px", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["14px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            /* Consistent with Home Screen background and grain texture */
+            background-color: #fcf9f8;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d4c3be;
+            border-radius: 10px
+        }
+        .soft-shadow {
+            box-shadow: 0px 4px 15px rgba(27, 28, 28, 0.08);
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="text-on-background font-body-md min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed flex flex-col">
+<!-- Navigation Header -->
+<header class="bg-surface-container/80 backdrop-blur-md text-on-surface w-full h-[44px] flex items-center justify-between sticky top-0 z-50 border-b border-outline-variant/20 px-4 pt-[env(safe-area-inset-top)]">
+<button class="w-8 h-8 flex items-center justify-center rounded-full active:scale-95 transition-all text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<h1 class="text-[17px] font-medium tracking-wide">服务协议</h1>
+<button class="w-8 h-8 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</button>
+</header>
+<main class="max-w-3xl mx-auto px-margin-page py-stack-md flex-grow">
+<!-- Content Container -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 soft-shadow overflow-hidden">
+<!-- Hero Image for Atmosphere -->
+<div class="relative h-48 w-full">
+<img class="w-full h-full object-cover opacity-80 mix-blend-multiply" data-alt="A macro photograph of an antique fountain pen resting on aged parchment paper with elegant cursive script." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwxl9q_FiXTIK90JUkdSldXF2_meNuQEHqcTr2QOw4-0Wl6KH84NJkZ9--fqXDHuFEqS1nFTtBLrkuDPe8835SIsGovbuS3Mv4wzL8c2lBR770Dhu38kLGcsVYaK4D2z3SFD2Yhwt-UlAghjiiA0_KCS74MowLfUmfSCWp_MeRWoe8MMoXhmlU5BwSHHoyRyQ6m2T3W5UDtfTbjt25if4i3KTXKzCcI_Qk3_K5siC3LZHROVhgIRxVbIK9iJYXHD97IxhYAizsXKuS">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-primary/60 mb-2">Terms of Service</p>
+<h2 class="font-headline-md text-headline-md text-primary">Legacy Restore 用户协议</h2>
+</div>
+</div>
+<!-- Agreement Text -->
+<div class="p-stack-lg space-y-stack-lg custom-scrollbar max-h-[500px] overflow-y-auto">
+<section>
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-sm flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    1. 协议确认与接受
+                </h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                    欢迎使用 Legacy Restore 影像修复服务。本协议是您与 Legacy Restore 运营方之间关于影像修复、增强、数字化保存服务的法律约定。在您点击“同意”或开始使用本服务前，请务必审慎阅读、充分理解各条款内容。
+                </p>
+</section>
+<section>
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-sm flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    2. 影像修复服务说明
+                </h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed mb-4">
+                    Legacy Restore 利用先进的AI技术及人工艺术辅助，为用户提供包括但不限于：
+                </p>
+<ul class="space-y-3 font-body-md text-on-surface-variant pl-4">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[18px] mt-0.5">check_circle</span>
+<span>老旧照片破损修复、划痕去除及清晰度增强。</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[18px] mt-0.5">check_circle</span>
+<span>黑白影像基于历史色彩研究的科学上色。</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[18px] mt-0.5">check_circle</span>
+<span>面部特征重建与五官清晰化处理。</span>
+</li>
+</ul>
+</section>
+<section class="bg-surface-variant/20 p-stack-md rounded-lg border-l-4 border-primary">
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-sm">
+                    3. 用户权利与义务
+                </h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed italic">
+                    您保证上传的照片不侵犯任何第三方的著作权、肖像权或其他合法权益。对于涉及敏感内容或法律明令禁止的影像，Legacy Restore 有权拒绝提供修复服务并终止账户。
+                </p>
+</section>
+<section>
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-sm flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    4. 隐私保护与安全
+                </h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                    我们深知每一张老照片背后的情感价值。Legacy Restore 承诺采取行业标准的加密措施保护您的影像数据。您的原始照片与修复后的结果仅供您个人查阅，除非获得您的明确书面授权，我们不会将您的影像用于任何商业营销或第三方展示。
+                </p>
+</section>
+<section>
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-sm flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    5. 退款与售后政策
+                </h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                    由于影像修复属于数字化定制服务，修复效果受限于原始照片的受损程度。若修复结果未达到您的预期，您可以在收到结果后的24小时内申请一次免费的二次人工微调。
+                </p>
+</section>
+<div class="pt-stack-lg border-t border-outline-variant/20 text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-60">
+                    最后更新日期：2023年10月24日
+                </p>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="mt-stack-lg flex flex-col items-center gap-4 pb-24">
+<button class="w-full bg-primary text-on-primary text-[16px] font-semibold py-4 rounded-full shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+            同意并进入服务
+        </button>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70">
+            继续操作即表示您已阅读并同意以上所有条款
+        </p>
+</div>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="bg-surface-container-lowest text-on-surface-variant fixed bottom-0 w-full z-50 border-t border-outline-variant/30 flex justify-around items-center pb-[max(env(safe-area-inset-bottom),16px)] pt-2 px-2">
+<button class="flex flex-col items-center justify-center hover:text-primary transition-all w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]">home</span>
+<span class="text-[10px] font-medium">首页</span>
+</button>
+<button class="flex flex-col items-center justify-center hover:text-primary transition-all w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]">history</span>
+<span class="text-[10px] font-medium">修复记录</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[10px] font-medium">我的</span>
+</button>
+</nav>
+</body></html>

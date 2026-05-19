@@ -1,0 +1,169 @@
+.page {
+  min-height: 100vh;
+  padding: 28rpx 28rpx 200rpx;
+  box-sizing: border-box;
+  background: #fcf9f8;
+}
+
+.title {
+  text-align: center;
+  padding: 20rpx 0 22rpx;
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #442a22;
+  background: #f0eded;
+  border-radius: 18rpx;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 30rpx rgba(68, 42, 34, 0.08);
+  border: 1rpx solid rgba(228, 226, 225, 0.8);
+  box-sizing: border-box;
+}
+
+.profile {
+  margin-top: 26rpx;
+  padding: 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+}
+
+.avatar {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 64rpx;
+  overflow: hidden;
+  background: rgba(68, 42, 34, 0.12);
+  border: 4rpx solid rgba(231, 189, 177, 0.8);
+  flex: 0 0 auto;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.profile-body {
+  flex: 1;
+}
+
+.name {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #1b1c1c;
+}
+
+.badge {
+  margin-top: 14rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(225, 225, 201, 0.85);
+  color: #1b1d0e;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.stats {
+  margin-top: 22rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22rpx;
+}
+
+.stat {
+  padding: 26rpx 18rpx;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 52rpx;
+  font-weight: 900;
+  color: #442a22;
+}
+
+.stat-value.blue {
+  color: #002e68;
+}
+
+.stat-label {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #504441;
+  font-weight: 700;
+}
+
+.recharge-btn {
+  margin-top: 22rpx;
+  width: 100%;
+  height: 92rpx;
+  padding: 0;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #442a22;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 900;
+  box-sizing: border-box;
+}
+
+.recharge-btn::after {
+  border: 0;
+}
+
+.menu {
+  margin-top: 24rpx;
+  overflow: hidden;
+}
+
+.menu-item {
+  padding: 24rpx 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1rpx solid rgba(228, 226, 225, 0.9);
+}
+
+.menu-item.last {
+  border-bottom: 0;
+}
+
+.menu-left {
+  font-size: 30rpx;
+  color: #1b1c1c;
+  font-weight: 700;
+}
+
+.menu-right {
+  font-size: 34rpx;
+  color: #827470;
+}
+
+.logout-btn {
+  margin-top: 26rpx;
+  width: 100%;
+  height: 92rpx;
+  padding: 0;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #ba1a1a;
+  font-size: 30rpx;
+  font-weight: 900;
+  border: 1rpx solid rgba(186, 26, 26, 0.22);
+  box-sizing: border-box;
+}
+
+.logout-btn::after {
+  border: 0;
+}
+
