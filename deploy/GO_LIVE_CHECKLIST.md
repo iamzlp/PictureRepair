@@ -2,6 +2,14 @@
 
 这份清单面向第一次正式上线，按顺序执行可降低漏项概率。
 
+当前已知部署参数：
+
+- 域名：`repairpic.51time.com`
+- 部署目录：`/www/repairpic`
+- Linux 运行用户：`root`
+- admin-web：同域部署
+- 后端监听端口：`8000`
+
 ## 1. 服务器准备
 
 - 创建项目目录，例如 `/opt/picturerepair`
