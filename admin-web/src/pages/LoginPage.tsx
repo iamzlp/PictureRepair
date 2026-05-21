@@ -10,8 +10,8 @@ export function LoginPage() {
   const token = useAdminAuthStore((state) => state.token)
   const admin = useAdminAuthStore((state) => state.admin)
   const setSession = useAdminAuthStore((state) => state.setSession)
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('Admin123456')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -74,7 +74,7 @@ export function LoginPage() {
               <div>
                 <p className="text-xs tracking-[0.35em] text-archive-paper/40 uppercase">管理员认证</p>
                 <h1 className="mt-2 font-display text-4xl text-white">登录后台</h1>
-                <p className="mt-3 text-sm leading-7 text-archive-mist">使用管理员账号进入后台。当前本地默认管理员账号已自动填充，便于联调。</p>
+                <p className="mt-3 text-sm leading-7 text-archive-mist">使用管理员账号进入后台。</p>
               </div>
             </div>
 
