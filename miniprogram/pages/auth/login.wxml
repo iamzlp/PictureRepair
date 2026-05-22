@@ -4,10 +4,10 @@
     <view class="close" bindtap="onClose">×</view>
     <view class="logo"></view>
     <view class="title">登录授权</view>
-    <view class="subtitle">当前为本地开发环境，使用 Mock 账号快速登录。</view>
+    <view class="subtitle">请使用当前微信账号授权手机号，并同步微信头像昵称。</view>
 
-    <button class="login-btn" bindtap="onMockLogin" loading="{{loggingIn}}">
-      使用 Mock 账号登录
+    <button class="login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatLogin" loading="{{loggingIn}}">
+      微信授权手机号并登录
     </button>
 
     <view class="agree-row" bindtap="toggleAgree">
@@ -17,7 +17,7 @@
         <text class="link" bindtap="openServiceAgreement">用户协议</text>
         <text> 和 </text>
         <text class="link" bindtap="openPrivacyPolicy">隐私政策</text>
-        <text>，本地开发默认使用 `13800138000` 对应的 Mock 用户。</text>
+        <text>，并使用当前微信身份创建或登录用户，头像昵称将用于个人资料展示。</text>
       </view>
     </view>
   </view>

@@ -1,13 +1,10 @@
+const auth = require('../utils/auth')
+
 const TAB_PAGES = [
   '/pages/index/index',
   '/pages/repair-record/index',
   '/pages/personal-centre/index'
 ]
-
-function getToken() {
-  const app = getApp()
-  return app.globalData.token || wx.getStorageSync('token') || ''
-}
 
 Component({
   data: {
@@ -31,7 +28,7 @@ Component({
       const index = Number(event.currentTarget.dataset.index)
       const url = TAB_PAGES[index]
       if (!url) return
-      if (index !== 0 && !getToken()) {
+      if (index !== 0 && !auth.hasUsableSessionSync()) {
         wx.navigateTo({
           url: `/pages/auth/login?tab=${encodeURIComponent(url)}`
         })

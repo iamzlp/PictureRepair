@@ -42,3 +42,5 @@ class WeChatLoginRequest(BaseModel):
 
 class WeChatPhoneRequest(BaseModel):
     code: str
+    nickname: Optional[str] = None
+    avatar_url: Optional[str] = None

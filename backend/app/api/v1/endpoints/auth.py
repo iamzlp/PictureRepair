@@ -111,6 +111,10 @@ async def bind_wechat_phone(
         digits = "".join(str(ord(char) % 10) for char in current_user.id)
         mock_phone = f"13{digits[:9].ljust(9, '0')}"
         current_user.phone = mock_phone
+        if request.nickname:
+            current_user.nickname = request.nickname.strip()[:64]
+        if request.avatar_url:
+            current_user.avatar_url = request.avatar_url.strip()
         await db.commit()
         await db.refresh(current_user)
         return current_user
@@ -153,6 +157,10 @@ async def bind_wechat_phone(
         raise HTTPException(status_code=409, detail="Phone number is already bound")
 
     current_user.phone = phone_number
+    if request.nickname:
+        current_user.nickname = request.nickname.strip()[:64]
+    if request.avatar_url:
+        current_user.avatar_url = request.avatar_url.strip()
     await db.commit()
     await db.refresh(current_user)
     return current_user

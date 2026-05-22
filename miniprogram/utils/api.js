@@ -98,11 +98,12 @@ function wechatLogin(code) {
   })
 }
 
-function bindWechatPhone(code) {
+function bindWechatPhone(payload) {
+  const data = typeof payload === 'string' ? { code: payload } : (payload || {})
   return request({
     url: '/auth/phone/wechat',
     method: 'POST',
-    data: { code }
+    data
   })
 }
 

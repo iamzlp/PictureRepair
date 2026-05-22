@@ -15,6 +15,19 @@
 - 后端 API：同域下走 `/api/`
 - 优点：`admin-web` 默认可直接使用 `VITE_API_BASE_URL=/api/v1/admin`，不需要额外处理跨域和 Cookie 域问题
 
+如果按当前已提供的服务器参数部署：
+
+- 域名：`repairpic.51time.com`
+- 部署目录：`/www/repairpic`
+- Linux 运行用户：`root`
+- 同域部署：admin-web 与 API 共用同一域名
+- 当前建议后端监听端口：`8000`
+
+已按这组参数生成可直接参考的文件：
+
+- `systemd`：[repairpic-api.service](file:///d:/mycode/PictureRepair/deploy/systemd/repairpic-api.service)
+- `Nginx`：[repairpic.51time.com.conf](file:///d:/mycode/PictureRepair/deploy/nginx/repairpic.51time.com.conf)
+
 ## 2. 后端环境变量
 
 可从 [`.env.production.example`](file:///d:/mycode/PictureRepair/.env.production.example) 复制为正式环境 `.env`，至少确认以下项：

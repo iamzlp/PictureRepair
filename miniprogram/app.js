@@ -2,11 +2,13 @@ const auth = require('./utils/auth')
 
 App({
   onLaunch() {
-    auth.ensureSession().catch(() => {})
+    if (auth.getToken()) {
+      auth.ensureSession().catch(() => {})
+    }
   },
 
   globalData: {
     token: wx.getStorageSync('token') || '',
-    user: null
+    user: wx.getStorageSync('user_profile') || null
   }
 })
