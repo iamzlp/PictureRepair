@@ -43,14 +43,23 @@
         <textarea class="textarea" value="{{content}}" bindinput="onContentInput" placeholder="请详细描述您遇到的问题或建议..." maxlength="500"></textarea>
       </view>
     </view>
-    <button class="submit-btn" bindtap="onSubmit">提交反馈</button>
+    <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">提交反馈</button>
+    <view wx:if="{{showSubmitSuccessTip && lastFeedbackId}}" class="submit-success-card">
+      <view class="submit-success-title">反馈已提交，可继续联系客服</view>
+      <view class="submit-success-desc">复制反馈编号后，点击下方“联系客服”，客服侧可更快定位你的问题。</view>
+      <view class="feedback-id-row">
+        <view class="feedback-id-text">反馈编号：{{lastFeedbackId}}</view>
+        <button class="copy-btn" bindtap="onCopyFeedbackId">复制编号</button>
+      </view>
+    </view>
   </view>
 
   <view class="support">
     <view class="support-left">
       <view class="support-title">需要人工支持？</view>
-      <view class="support-desc">咨询我们的老照片修复专家。</view>
+      <view class="support-desc">进入微信客服会话，自动带上当前页面和最近一次反馈信息。</view>
+      <view wx:if="{{lastFeedbackId}}" class="support-note">最近反馈编号：{{lastFeedbackId}}</view>
     </view>
-    <button class="support-btn" bindtap="onSupport">在线咨询</button>
+    <button class="support-btn" open-type="contact" session-from="{{contactSessionFrom}}">联系客服</button>
   </view>
 </view>

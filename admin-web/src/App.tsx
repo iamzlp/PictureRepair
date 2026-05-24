@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 import { AdminShell } from '@/components/layout/AdminShell'
 import { AuditLogsPage } from '@/pages/AuditLogsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { FeedbacksPage } from '@/pages/FeedbacksPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { OrderDetailPage } from '@/pages/OrderDetailPage'
 import { OrdersPage } from '@/pages/OrdersPage'
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/feedback" element={<FeedbacksPage />} />
             <Route path="/audit-logs" element={<AuditLogsPage />} />
             <Route path="/system-config" element={<SystemConfigPage />} />
           </Route>

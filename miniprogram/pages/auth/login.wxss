@@ -38,16 +38,8 @@
   color: #1b1c1c;
 }
 
-.logo {
-  width: 136rpx;
-  height: 136rpx;
-  border-radius: 28rpx;
-  margin: 0 auto;
-  background: linear-gradient(135deg, rgba(68, 42, 34, 0.25), rgba(0, 46, 104, 0.15));
-}
-
 .title {
-  margin-top: 30rpx;
+  margin-top: 4rpx;
   font-size: 44rpx;
   font-weight: 800;
   text-align: center;

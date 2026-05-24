@@ -257,15 +257,19 @@
 }
 
 .result-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  align-items: center;
   gap: 16rpx;
   margin-top: 22rpx;
+  width: 100%;
+  overflow: hidden;
 }
 
 .btn {
+  flex: 1 1 0;
   min-width: 0;
-  width: 100%;
+  width: 0;
+  max-width: none;
   height: 84rpx;
   padding: 0;
   margin: 0;

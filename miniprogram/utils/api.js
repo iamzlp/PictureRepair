@@ -113,6 +113,14 @@ function getMe() {
   })
 }
 
+function submitFeedback(payload) {
+  return request({
+    url: '/feedback',
+    method: 'POST',
+    data: payload || {}
+  })
+}
+
 function createRepairTask(payload) {
   return request({
     url: '/repair/tasks',
@@ -195,6 +203,7 @@ module.exports = {
   listTransactions,
   mockPurchase,
   mockLogin,
+  submitFeedback,
   wechatLogin,
   uploadPhoto
 }

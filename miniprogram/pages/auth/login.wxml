@@ -2,7 +2,6 @@
   <view class="mask"></view>
   <view class="card">
     <view class="close" bindtap="onClose">×</view>
-    <view class="logo"></view>
     <view class="title">登录授权</view>
     <view class="subtitle">请使用当前微信账号授权手机号，并同步微信头像昵称。</view>
 

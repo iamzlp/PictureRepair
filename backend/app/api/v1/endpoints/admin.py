@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.models.admin import AdminAuditLog, AdminUser
 from app.models.billing import CreditTransaction, Order
+from app.models.feedback import UserFeedback
 from app.models.task import GenerationTask
 from app.models.user import User
 from app.services.storage import storage_manager
@@ -23,6 +24,7 @@ from app.schemas.admin import (
     AdminCreditAdjustmentRequest,
     AdminCreditAdjustmentResponse,
     AdminDashboardSummaryResponse,
+    AdminFeedbackResponse,
     AdminLoginRequest,
     AdminLoginResponse,
     AdminOrderResponse,
@@ -73,6 +75,21 @@ def serialize_user(user: User) -> AdminUserResponse:
         avatar_url=storage_manager.resolve_public_url(user.avatar_url, expires=1800),
         mileage_balance=user.mileage_balance or 0,
         created_at=user.created_at,
+    )
+
+
+def serialize_feedback(feedback: UserFeedback, user: User | None = None) -> AdminFeedbackResponse:
+    return AdminFeedbackResponse(
+        id=feedback.id,
+        user_id=feedback.user_id,
+        user_phone=user.phone if user else None,
+        user_nickname=user.nickname if user else None,
+        feedback_type=feedback.feedback_type,
+        content=feedback.content,
+        status=feedback.status,
+        source=feedback.source,
+        page_path=feedback.page_path,
+        created_at=feedback.created_at,
     )
 
 
@@ -453,6 +470,37 @@ async def admin_list_audit_logs(
         stmt = stmt.where(AdminAuditLog.created_at <= end_at)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+@router.get("/feedback", response_model=list[AdminFeedbackResponse])
+async def admin_list_feedback(
+    feedback_type: Optional[str] = None,
+    status: Optional[str] = None,
+    user_id: Optional[str] = None,
+    keyword: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_admin: AdminUser = Depends(deps.get_current_admin),
+) -> Any:
+    _ = current_admin
+    stmt = (
+        select(UserFeedback, User)
+        .outerjoin(User, User.id == UserFeedback.user_id)
+        .order_by(UserFeedback.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    if feedback_type:
+        stmt = stmt.where(UserFeedback.feedback_type == feedback_type)
+    if status:
+        stmt = stmt.where(UserFeedback.status == status)
+    if user_id:
+        stmt = stmt.where(UserFeedback.user_id == user_id)
+    if keyword:
+        stmt = stmt.where(UserFeedback.content.ilike(f"%{keyword.strip()}%"))
+    result = await db.execute(stmt)
+    return [serialize_feedback(feedback, user) for feedback, user in result.all()]
 
 
 @router.get("/system/config", response_model=AdminSystemConfigResponse)

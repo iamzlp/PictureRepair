@@ -140,3 +140,16 @@ class AdminAuditLogResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AdminFeedbackResponse(BaseModel):
+    id: str
+    user_id: str
+    user_phone: Optional[str] = None
+    user_nickname: Optional[str] = None
+    feedback_type: str
+    content: str
+    status: str
+    source: str
+    page_path: Optional[str] = None
+    created_at: datetime

@@ -95,6 +95,19 @@ export type AdminAuditLog = {
   created_at: string
 }
 
+export type AdminFeedback = {
+  id: string
+  user_id: string
+  user_phone?: string
+  user_nickname?: string
+  feedback_type: string
+  content: string
+  status: string
+  source: string
+  page_path?: string
+  created_at: string
+}
+
 export type CreditPackage = {
   id: string
   title: string
@@ -251,5 +264,14 @@ export async function fetchAuditLogs(
 ) {
   const query = buildSearchParams(params).toString()
   const { data } = await client.get<AdminAuditLog[]>(query ? `/audit-logs?${query}` : '/audit-logs', withAuth(token))
+  return data
+}
+
+export async function fetchFeedbacks(
+  token: string,
+  params: { feedback_type?: string; status?: string; user_id?: string; keyword?: string; skip?: number; limit?: number }
+) {
+  const query = buildSearchParams(params).toString()
+  const { data } = await client.get<AdminFeedback[]>(query ? `/feedback?${query}` : '/feedback', withAuth(token))
   return data
 }

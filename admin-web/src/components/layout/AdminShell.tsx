@@ -4,6 +4,7 @@ import {
   FileClock,
   LayoutDashboard,
   LogOut,
+  MessageSquareQuote,
   Settings2,
   ShieldCheck,
   Tickets,
@@ -20,6 +21,7 @@ const navigation = [
   { to: '/tasks', label: '修复任务', icon: ActivitySquare, note: '状态与失败重试' },
   { to: '/orders', label: '订单管理', icon: BadgeDollarSign, note: '支付与套餐记录' },
   { to: '/transactions', label: '积分流水', icon: Tickets, note: '购买/导出/调账' },
+  { to: '/feedback', label: '用户反馈', icon: MessageSquareQuote, note: '建议与问题收集' },
   { to: '/audit-logs', label: '审计日志', icon: FileClock, note: '管理员操作痕迹' },
   { to: '/system-config', label: '系统配置', icon: Settings2, note: 'mock 与测试价' },
 ]
