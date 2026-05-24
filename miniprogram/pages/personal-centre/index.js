@@ -5,7 +5,8 @@ Page({
   data: {
     user: null,
     repairedCount: 0,
-    balance: 0
+    balance: 0,
+    avatarLoadErrorShown: false
   },
 
   async onShow() {
@@ -34,11 +35,28 @@ Page({
       this.setData({
         user,
         repairedCount,
-        balance: user && typeof user.mileage_balance === 'number' ? user.mileage_balance : (user && user.mileage_balance ? user.mileage_balance : 0)
+        balance: user && typeof user.mileage_balance === 'number' ? user.mileage_balance : (user && user.mileage_balance ? user.mileage_balance : 0),
+        avatarLoadErrorShown: false
       })
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' })
     }
+  },
+
+  onAvatarError() {
+    if (this.data.avatarLoadErrorShown) return
+    const avatarUrl = this.data.user && this.data.user.avatar_url ? this.data.user.avatar_url : ''
+    let host = ''
+    if (avatarUrl) {
+      const match = avatarUrl.match(/^https?:\/\/([^/]+)/)
+      host = match ? match[1] : ''
+    }
+    this.setData({ avatarLoadErrorShown: true })
+    wx.showToast({
+      title: host ? `头像加载失败，请检查微信后台白名单：${host}` : '头像加载失败，请检查图片域名白名单',
+      icon: 'none',
+      duration: 3000
+    })
   },
 
   goRecharge() {

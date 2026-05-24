@@ -87,6 +87,61 @@ function getWechatProfile() {
   })
 }
 
+function buildProfilePayload(profile) {
+  if (!profile || typeof profile !== 'object') return {}
+  const payload = {}
+  if (profile.nickname) {
+    payload.nickname = String(profile.nickname).trim()
+  }
+  if (profile.avatarUrl) {
+    payload.avatarUrl = String(profile.avatarUrl).trim()
+  }
+  return payload
+}
+
+function isLocalFilePath(value) {
+  return typeof value === 'string' && (/^(wxfile|http:\/\/tmp|https:\/\/tmp|\/)/.test(value))
+}
+
+function normalizeAvatarUploadError(error) {
+  if (error && error.message) {
+    return `微信头像上传失败：${error.message}`
+  }
+  return '微信头像上传失败，请检查后端存储配置或网络连接'
+}
+
+async function prepareWechatProfile(profile) {
+  const payload = buildProfilePayload(profile)
+  if (!payload.nickname && !payload.avatarUrl) {
+    const fallback = await getWechatProfile()
+    if (fallback) {
+      return {
+        nickname: fallback.nickname || '',
+        avatar_url: fallback.avatar_url || ''
+      }
+    }
+    return {}
+  }
+
+  let avatarUrl = payload.avatarUrl || ''
+  if (avatarUrl && isLocalFilePath(avatarUrl)) {
+    const uploadResult = await api.uploadPhoto(avatarUrl, 'avatar').catch((error) => {
+      throw new Error(normalizeAvatarUploadError(error))
+    })
+
+    if (!uploadResult || !uploadResult.url) {
+      throw new Error('微信头像上传失败：后端未返回头像地址')
+    }
+
+    avatarUrl = uploadResult.url
+  }
+
+  return {
+    nickname: payload.nickname || '',
+    avatar_url: avatarUrl || ''
+  }
+}
+
 async function loginWithWechat() {
   const code = await getWechatCode()
   const loginResult = await api.wechatLogin(code)
@@ -95,18 +150,18 @@ async function loginWithWechat() {
   return true
 }
 
-async function loginWithWechatPhone(phoneCode) {
+async function loginWithWechatPhone(phoneCode, profile) {
   if (!phoneCode) {
     throw new Error('未获取到手机号授权凭证')
   }
 
   try {
     await loginWithWechat()
-    const profile = await getWechatProfile()
+    const profilePayload = await prepareWechatProfile(profile)
     const user = await api.bindWechatPhone({
       code: phoneCode,
-      nickname: profile && profile.nickname ? profile.nickname : undefined,
-      avatar_url: profile && profile.avatar_url ? profile.avatar_url : undefined
+      nickname: profilePayload.nickname || undefined,
+      avatar_url: profilePayload.avatar_url || undefined
     })
     const app = getApp()
     app.globalData.user = user

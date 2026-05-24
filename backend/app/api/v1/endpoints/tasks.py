@@ -17,6 +17,19 @@ from app.api import deps
 
 router = APIRouter()
 
+
+def serialize_task(task: GenerationTask) -> GenerationTaskResponse:
+    return GenerationTaskResponse(
+        task_id=task.id,
+        status=task.status,
+        progress=task.progress or 0,
+        task_type=task.task_type,
+        reference_image_url=storage_manager.resolve_public_url(task.reference_image_url, expires=900),
+        result_url=storage_manager.resolve_public_url(task.result_url, expires=900),
+        error_message=task.error_message,
+        created_at=task.created_at,
+    )
+
 # -------------------------------------------------------------------
 # Real Worker (Volcengine + Storage)
 # -------------------------------------------------------------------
@@ -57,6 +70,7 @@ async def process_generation_task(task_id: str):
                     reference_urls = []
             if not reference_urls and task.reference_image_url:
                 reference_urls = [task.reference_image_url]
+            reference_urls = [storage_manager.normalize_file_reference(url) for url in reference_urls if url]
 
             if settings.MOCK_IMAGE_GENERATION:
                 await asyncio.sleep(1)
@@ -78,7 +92,9 @@ async def process_generation_task(task_id: str):
                 prompt=task.prompt,
                 style=style_value,
                 aspect_ratio=task.aspect_ratio,
-                reference_image_urls=reference_urls
+                reference_image_urls=[
+                    storage_manager.resolve_public_url(url, expires=900) for url in reference_urls
+                ]
             )
             
             task.progress = 80
@@ -88,7 +104,8 @@ async def process_generation_task(task_id: str):
             # Also sync, run in thread
             image_url = await asyncio.to_thread(
                 storage_manager.upload_image,
-                image_data=image_data
+                image_data=image_data,
+                folder="results"
             )
 
             # 4. Update Status -> COMPLETED
@@ -124,10 +141,15 @@ async def create_task(
     
     reference_urls = []
     if request.reference_image_urls:
-        reference_urls = [str(url).strip() for url in request.reference_image_urls if str(url).strip()]
+        reference_urls = [
+            storage_manager.normalize_file_reference(str(url).strip())
+            for url in request.reference_image_urls
+            if str(url).strip()
+        ]
     if request.reference_image_url and request.reference_image_url.strip():
-        if request.reference_image_url.strip() not in reference_urls:
-            reference_urls.insert(0, request.reference_image_url.strip())
+        normalized_reference = storage_manager.normalize_file_reference(request.reference_image_url.strip())
+        if normalized_reference not in reference_urls:
+            reference_urls.insert(0, normalized_reference)
     print(f"[Create Task Processed] final reference_urls={reference_urls}")
     if len(reference_urls) > 4:
         raise HTTPException(status_code=422, detail="reference_image_urls 最多支持 4 张")
@@ -148,14 +170,7 @@ async def create_task(
     # Trigger background task
     background_tasks.add_task(process_generation_task, str(new_task.id))
     
-    return GenerationTaskResponse(
-        task_id=new_task.id,
-        status=new_task.status,
-        progress=0,
-        task_type=new_task.task_type,
-        reference_image_url=new_task.reference_image_url,
-        created_at=new_task.created_at
-    )
+    return serialize_task(new_task)
 
 @router.get("/", response_model=List[GenerationTaskResponse], response_model_by_alias=False)
 async def list_tasks(
@@ -177,18 +192,7 @@ async def list_tasks(
     tasks = result.scalars().all()
     
     # Manually map to response model to avoid Pydantic alias issues with ORM
-    return [
-        GenerationTaskResponse(
-            task_id=t.id,
-            status=t.status,
-            progress=t.progress,
-            task_type=t.task_type,
-            reference_image_url=t.reference_image_url,
-            result_url=t.result_url,
-            error_message=t.error_message,
-            created_at=t.created_at
-        ) for t in tasks
-    ]
+    return [serialize_task(t) for t in tasks]
 
 @router.get("/{task_id}", response_model=GenerationTaskResponse, response_model_by_alias=False)
 async def get_task_status(
@@ -204,13 +208,4 @@ async def get_task_status(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    return GenerationTaskResponse(
-        task_id=task.id,
-        status=task.status,
-        progress=task.progress,
-        task_type=task.task_type,
-        reference_image_url=task.reference_image_url,
-        result_url=task.result_url,
-        error_message=task.error_message,
-        created_at=task.created_at
-    )
+    return serialize_task(task)

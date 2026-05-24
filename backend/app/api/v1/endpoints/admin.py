@@ -17,6 +17,7 @@ from app.models.admin import AdminAuditLog, AdminUser
 from app.models.billing import CreditTransaction, Order
 from app.models.task import GenerationTask
 from app.models.user import User
+from app.services.storage import storage_manager
 from app.schemas.admin import (
     AdminAuditLogResponse,
     AdminCreditAdjustmentRequest,
@@ -52,13 +53,26 @@ def serialize_task(task: GenerationTask) -> AdminTaskResponse:
         task_type=task.task_type,
         style=style,
         aspect_ratio=aspect_ratio,
-        reference_image_url=task.reference_image_url,
-        result_url=task.result_url,
+        reference_image_url=storage_manager.resolve_public_url(task.reference_image_url, expires=900),
+        result_url=storage_manager.resolve_public_url(task.result_url, expires=900),
         progress=task.progress or 0,
         error_message=task.error_message,
         external_task_id=task.external_task_id,
         created_at=task.created_at,
         updated_at=task.updated_at,
+    )
+
+
+def serialize_user(user: User) -> AdminUserResponse:
+    return AdminUserResponse(
+        id=user.id,
+        phone=user.phone,
+        openid=user.openid,
+        unionid=user.unionid,
+        nickname=user.nickname,
+        avatar_url=storage_manager.resolve_public_url(user.avatar_url, expires=1800),
+        mileage_balance=user.mileage_balance or 0,
+        created_at=user.created_at,
     )
 
 
@@ -192,7 +206,7 @@ async def admin_list_users(
     if nickname:
         stmt = stmt.where(User.nickname.ilike(f"%{nickname.strip()}%"))
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return [serialize_user(user) for user in result.scalars().all()]
 
 
 @router.get("/users/{user_id}", response_model=AdminUserResponse)
@@ -206,7 +220,7 @@ async def admin_get_user(
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return serialize_user(user)
 
 
 @router.post("/users/{user_id}/credits/adjust", response_model=AdminCreditAdjustmentResponse)

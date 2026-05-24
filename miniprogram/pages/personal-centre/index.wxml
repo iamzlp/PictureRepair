@@ -3,7 +3,7 @@
 
   <view class="card profile">
     <view class="avatar">
-      <image wx:if="{{user && user.avatar_url}}" class="avatar-img" src="{{user.avatar_url}}" mode="aspectFill"></image>
+      <image wx:if="{{user && user.avatar_url}}" class="avatar-img" src="{{user.avatar_url}}" mode="aspectFill" binderror="onAvatarError"></image>
     </view>
     <view class="profile-body">
       <view class="name">{{user ? (user.nickname || '微信用户') : '未登录'}}</view>

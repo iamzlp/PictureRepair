@@ -6,8 +6,22 @@
     <view class="title">登录授权</view>
     <view class="subtitle">请使用当前微信账号授权手机号，并同步微信头像昵称。</view>
 
+    <view class="profile-form">
+      <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{avatarUrl}}" class="avatar-preview" src="{{avatarUrl}}" mode="aspectFill"></image>
+        <view wx:else class="avatar-placeholder">选择微信头像</view>
+      </button>
+      <input
+        class="nickname-input"
+        type="nickname"
+        placeholder="请输入微信昵称"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+      />
+    </view>
+
     <button class="login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatLogin" loading="{{loggingIn}}">
-      微信授权手机号并登录
+      <view class="login-btn-text">微信授权手机号并登录</view>
     </button>
 
     <view class="agree-row" bindtap="toggleAgree">

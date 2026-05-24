@@ -12,8 +12,23 @@ from app.models.billing import CreditTransaction
 from app.models.task import GenerationTask
 from app.models.user import User
 from app.schemas import ArtStyle, ExportResponse, RepairMode, RepairTaskCreate, RepairTaskResponse, TaskStatus
+from app.services.storage import storage_manager
 
 router = APIRouter()
+
+
+def serialize_repair_task(task: GenerationTask, mode: RepairMode | None = None) -> RepairTaskResponse:
+    return RepairTaskResponse(
+        task_id=task.id,
+        status=task.status,
+        progress=task.progress or 0,
+        task_type=task.task_type,
+        reference_image_url=storage_manager.resolve_public_url(task.reference_image_url, expires=900),
+        result_url=storage_manager.resolve_public_url(task.result_url, expires=900),
+        error_message=task.error_message,
+        created_at=task.created_at,
+        mode=mode,
+    )
 
 
 def build_repair_prompt(mode: RepairMode, extra_prompt: str | None = None) -> str:
@@ -45,6 +60,7 @@ async def create_repair_task(
     if not request.image_url.strip():
         raise HTTPException(status_code=422, detail="image_url is required")
 
+    normalized_image_url = storage_manager.normalize_file_reference(request.image_url.strip())
     prompt = build_repair_prompt(request.mode, request.extra_prompt)
     task = GenerationTask(
         user_id=current_user.id,
@@ -52,11 +68,11 @@ async def create_repair_task(
         task_type=f"old_photo_{request.mode.value}",
         style=ArtStyle.REALISTIC,
         aspect_ratio=request.aspect_ratio,
-        reference_image_url=request.image_url.strip(),
+        reference_image_url=normalized_image_url,
         prompt_trace=json.dumps(
             {
                 "repair_mode": request.mode.value,
-                "reference_image_urls": [request.image_url.strip()],
+                "reference_image_urls": [normalized_image_url],
             },
             ensure_ascii=False,
         ),
@@ -70,15 +86,7 @@ async def create_repair_task(
 
     background_tasks.add_task(process_generation_task, str(task.id))
 
-    return RepairTaskResponse(
-        task_id=task.id,
-        status=task.status,
-        progress=task.progress or 0,
-        task_type=task.task_type,
-        reference_image_url=task.reference_image_url,
-        created_at=task.created_at,
-        mode=request.mode,
-    )
+    return serialize_repair_task(task, mode=request.mode)
 
 
 @router.get("/tasks/{task_id}", response_model=RepairTaskResponse, response_model_by_alias=False)
@@ -103,17 +111,7 @@ async def get_repair_task(
     elif task.task_type == "old_photo_enhance":
         mode = RepairMode.ENHANCE
 
-    return RepairTaskResponse(
-        task_id=task.id,
-        status=task.status,
-        progress=task.progress or 0,
-        task_type=task.task_type,
-        reference_image_url=task.reference_image_url,
-        result_url=task.result_url,
-        error_message=task.error_message,
-        created_at=task.created_at,
-        mode=mode,
-    )
+    return serialize_repair_task(task, mode=mode)
 
 
 @router.post("/tasks/{task_id}/export", response_model=ExportResponse)
@@ -145,7 +143,7 @@ async def export_repair_result(
     if existing_transaction:
         return ExportResponse(
             task_id=task.id,
-            result_url=task.result_url,
+            result_url=storage_manager.resolve_public_url(task.result_url, expires=900) or "",
             balance=current_user.mileage_balance or 0,
             charged=False,
             transaction_id=existing_transaction.id,
@@ -171,7 +169,7 @@ async def export_repair_result(
 
     return ExportResponse(
         task_id=task.id,
-        result_url=task.result_url,
+        result_url=storage_manager.resolve_public_url(task.result_url, expires=900) or "",
         balance=current_user.mileage_balance,
         charged=True,
         transaction_id=transaction.id,

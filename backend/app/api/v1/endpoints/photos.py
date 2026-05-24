@@ -1,5 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +9,18 @@ from app.models.user import User
 from app.models.photo import Photo
 from app.schemas.photo import PhotoResponse
 from app.services.storage import storage_manager
-import uuid
 
 router = APIRouter()
+
+
+def serialize_photo(photo: Photo) -> PhotoResponse:
+    return PhotoResponse(
+        id=photo.id,
+        url=storage_manager.resolve_public_url(photo.url, expires=1800) or "",
+        category=photo.category,
+        filename=photo.filename,
+        created_at=photo.created_at,
+    )
 
 @router.post("/upload", response_model=PhotoResponse)
 async def upload_photo(
@@ -28,24 +37,24 @@ async def upload_photo(
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
-        url = storage_manager.upload_file(file.file, file.filename, file.content_type)
-        print(f"[Upload Photo] Uploaded to storage, URL: {url}")
+        file_ref = storage_manager.upload_file(file.file, file.filename, file.content_type, folder=category)
+        print(f"[Upload Photo] Uploaded to storage, ref: {file_ref}")
     except Exception as e:
         print(f"[Upload Photo] Upload failed: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to upload to storage: {str(e)}")
 
     photo = Photo(
         user_id=current_user.id,
-        url=url,
+        url=file_ref,
         filename=file.filename,
         category=category
     )
     db.add(photo)
     await db.commit()
     await db.refresh(photo)
-    print(f"[Upload Photo] Saved to DB - id: {photo.id}, url: {photo.url}")
+    print(f"[Upload Photo] Saved to DB - id: {photo.id}, ref: {photo.url}")
 
-    return photo
+    return serialize_photo(photo)
 
 @router.get("/", response_model=List[PhotoResponse])
 async def list_photos(
@@ -69,7 +78,7 @@ async def list_photos(
     print(f"[List Photos] Found {len(photos)} photos for user {current_user.id}")
     for photo in photos:
         print(f"[List Photos] Photo - id: {photo.id}, url: {photo.url}, filename: {photo.filename}")
-    return photos
+    return [serialize_photo(photo) for photo in photos]
 
 @router.delete("/{photo_id}", response_model=PhotoResponse)
 async def delete_photo(
@@ -91,4 +100,4 @@ async def delete_photo(
     await db.delete(photo)
     await db.commit()
     
-    return photo
+    return serialize_photo(photo)

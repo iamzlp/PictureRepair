@@ -43,7 +43,7 @@ function request(options) {
   })
 }
 
-function uploadPhoto(filePath) {
+function uploadPhoto(filePath, category) {
   const token = getToken()
 
   return new Promise((resolve, reject) => {
@@ -52,7 +52,7 @@ function uploadPhoto(filePath) {
       filePath,
       name: 'file',
       formData: {
-        category: 'old_photo'
+        category: category || 'old_photo'
       },
       header: token ? { Authorization: `Bearer ${token}` } : {},
       success: (res) => {

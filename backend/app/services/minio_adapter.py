@@ -3,6 +3,7 @@ from botocore.client import Config
 from app.core.config import settings
 import io
 import uuid
+from urllib.parse import unquote, urlparse
 
 class MinioAdapter:
     def __init__(self):
@@ -38,24 +39,57 @@ class MinioAdapter:
             base_url = base_url[:-1]
         return f"{base_url}/{self.bucket_name}/{filename}"
 
-    def upload_image(self, image_data: bytes, content_type: str = "image/png") -> str:
+    def _build_object_key(self, filename: str, folder: str | None = None) -> str:
+        if folder and folder.strip("/"):
+            return f"{folder.strip('/')}/{filename}"
+        return filename
+
+    def normalize_object_key(self, value: str) -> str:
+        normalized = (value or "").strip()
+        if not normalized:
+            return normalized
+
+        if normalized.startswith("http://") or normalized.startswith("https://"):
+            parsed = urlparse(normalized)
+            endpoint = urlparse((settings.MINIO_SERVER_URL or settings.MINIO_ENDPOINT or "").rstrip("/"))
+            if endpoint.netloc and parsed.netloc.lower() == endpoint.netloc.lower():
+                path = unquote(parsed.path.lstrip("/"))
+                prefix = f"{self.bucket_name}/"
+                if path.startswith(prefix):
+                    return path[len(prefix):]
+            return normalized
+
+        return normalized.lstrip("/")
+
+    def sign_url(self, value: str, expires: int = 600) -> str:
+        normalized = self.normalize_object_key(value)
+        if not normalized or normalized.startswith("http://") or normalized.startswith("https://"):
+            return value
+        return self.s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket_name, "Key": normalized},
+            ExpiresIn=expires,
+        )
+
+    def upload_image(self, image_data: bytes, content_type: str = "image/png", folder: str | None = None) -> str:
         """
         Upload image bytes to MinIO and return the URL.
         """
         if not self.ready:
             raise RuntimeError(f"MinIO not ready: {self.init_error}")
         filename = f"{uuid.uuid4()}.png"
+        object_key = self._build_object_key(filename, folder)
         
         self.s3_client.upload_fileobj(
             io.BytesIO(image_data),
             self.bucket_name,
-            filename,
+            object_key,
             ExtraArgs={'ContentType': content_type}
         )
         
-        return self._get_public_url(filename)
+        return object_key
 
-    def upload_file(self, file_obj, original_filename: str, content_type: str) -> str:
+    def upload_file(self, file_obj, original_filename: str, content_type: str, folder: str | None = None) -> str:
         """
         Upload file object (like UploadFile.file) to MinIO.
         """
@@ -63,14 +97,15 @@ class MinioAdapter:
             raise RuntimeError(f"MinIO not ready: {self.init_error}")
         ext = original_filename.split('.')[-1] if '.' in original_filename else 'png'
         filename = f"{uuid.uuid4()}.{ext}"
+        object_key = self._build_object_key(filename, folder)
         
         self.s3_client.upload_fileobj(
             file_obj,
             self.bucket_name,
-            filename,
+            object_key,
             ExtraArgs={'ContentType': content_type}
         )
         
-        return self._get_public_url(filename)
+        return object_key
 
 minio_adapter = MinioAdapter()

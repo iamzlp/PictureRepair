@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.db.session import get_db, AsyncSession
 from app.models.user import User
 from app.schemas.user import Token, UserResponse, WeChatLoginRequest, WeChatPhoneRequest
+from app.services.storage import storage_manager
 
 router = APIRouter()
 
@@ -21,6 +22,19 @@ def create_user_token(user: User) -> Token:
         subject=user.id, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
+
+
+def serialize_user(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        phone=user.phone,
+        openid=user.openid,
+        unionid=user.unionid,
+        nickname=user.nickname,
+        avatar_url=storage_manager.resolve_public_url(user.avatar_url, expires=1800),
+        mileage_balance=user.mileage_balance or 0,
+        created_at=user.created_at,
+    )
 
 @router.post("/login/mock", response_model=Token)
 async def login_mock(
@@ -114,10 +128,10 @@ async def bind_wechat_phone(
         if request.nickname:
             current_user.nickname = request.nickname.strip()[:64]
         if request.avatar_url:
-            current_user.avatar_url = request.avatar_url.strip()
+            current_user.avatar_url = storage_manager.normalize_file_reference(request.avatar_url.strip())
         await db.commit()
         await db.refresh(current_user)
-        return current_user
+        return serialize_user(current_user)
 
     if not settings.WECHAT_APPID or not settings.WECHAT_SECRET:
         raise HTTPException(status_code=500, detail="WECHAT_APPID/WECHAT_SECRET not configured")
@@ -160,10 +174,10 @@ async def bind_wechat_phone(
     if request.nickname:
         current_user.nickname = request.nickname.strip()[:64]
     if request.avatar_url:
-        current_user.avatar_url = request.avatar_url.strip()
+        current_user.avatar_url = storage_manager.normalize_file_reference(request.avatar_url.strip())
     await db.commit()
     await db.refresh(current_user)
-    return current_user
+    return serialize_user(current_user)
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(
@@ -172,4 +186,4 @@ async def read_users_me(
     """
     Get current user.
     """
-    return current_user
+    return serialize_user(current_user)

@@ -4,6 +4,8 @@ Page({
   data: {
     agreed: true,
     loggingIn: false,
+    avatarUrl: '',
+    nickname: '',
     tab: '',
     back: '',
     redirect: ''
@@ -45,6 +47,16 @@ Page({
     wx.switchTab({ url: '/pages/index/index' })
   },
 
+  onChooseAvatar(event) {
+    const avatarUrl = event && event.detail ? (event.detail.avatarUrl || '') : ''
+    this.setData({ avatarUrl })
+  },
+
+  onNicknameInput(event) {
+    const nickname = event && event.detail ? (event.detail.value || '') : ''
+    this.setData({ nickname })
+  },
+
   async onWechatLogin(event) {
     if (this.data.loggingIn) return
     if (!this.data.agreed) {
@@ -55,10 +67,21 @@ Page({
       wx.showToast({ title: '需要先授权手机号', icon: 'none' })
       return
     }
+    if (!this.data.avatarUrl) {
+      wx.showToast({ title: '请先选择微信头像', icon: 'none' })
+      return
+    }
+    if (!this.data.nickname || !String(this.data.nickname).trim()) {
+      wx.showToast({ title: '请先填写微信昵称', icon: 'none' })
+      return
+    }
 
     this.setData({ loggingIn: true })
     try {
-      await auth.loginWithWechatPhone(event.detail.code)
+      await auth.loginWithWechatPhone(event.detail.code, {
+        avatarUrl: this.data.avatarUrl,
+        nickname: this.data.nickname
+      })
 
       if (this.data.tab) {
         wx.switchTab({ url: this.data.tab })
