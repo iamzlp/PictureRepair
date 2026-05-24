@@ -34,15 +34,23 @@ class StorageManager:
         if self.storage_type == 'oss':
             try:
                 from app.services.oss_adapter import oss_adapter
-                self.adapter = oss_adapter
+                if not oss_adapter.ready:
+                    print(f"[Storage] OSS adapter not ready, falling back to MinIO. Error: {oss_adapter.init_error}")
+                    from app.services.minio_adapter import minio_adapter
+                    self.adapter = minio_adapter
+                    self.storage_type = 'minio'
+                else:
+                    self.adapter = oss_adapter
+                    print("[Storage] OSS adapter initialized successfully")
             except Exception as e:
-                print(f"Failed to initialize OSS adapter: {e}")
+                print(f"[Storage] Failed to import OSS adapter: {e}, falling back to MinIO")
                 from app.services.minio_adapter import minio_adapter
                 self.adapter = minio_adapter
                 self.storage_type = 'minio'
         else:
             from app.services.minio_adapter import minio_adapter
             self.adapter = minio_adapter
+            print("[Storage] Using MinIO adapter")
 
     def upload_image(self, image_data: bytes, content_type: str = "image/png", folder: str | None = None) -> str:
         if not self.adapter:
