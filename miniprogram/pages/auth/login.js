@@ -1,5 +1,28 @@
 const auth = require('../../utils/auth')
 
+function getPhoneAuthErrorMessage(event) {
+  const detail = event && event.detail ? event.detail : {}
+  const errMsg = detail && detail.errMsg ? String(detail.errMsg) : ''
+
+  if (!errMsg) {
+    return '需要先授权手机号'
+  }
+
+  if (errMsg.includes('getPhoneNumber:fail user deny')) {
+    return '你已取消手机号授权'
+  }
+
+  if (errMsg.includes('getPhoneNumber:fail user cancel')) {
+    return '你已取消手机号授权'
+  }
+
+  if (errMsg.includes('privacy permission is not authorized')) {
+    return '隐私授权未完成，请先同意手机号相关隐私授权'
+  }
+
+  return `手机号授权失败：${errMsg}`
+}
+
 Page({
   data: {
     agreed: true,
@@ -64,7 +87,7 @@ Page({
       return
     }
     if (!event || !event.detail || !event.detail.code) {
-      wx.showToast({ title: '需要先授权手机号', icon: 'none' })
+      wx.showToast({ title: getPhoneAuthErrorMessage(event), icon: 'none' })
       return
     }
     if (!this.data.avatarUrl) {
