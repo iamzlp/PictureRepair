@@ -163,6 +163,13 @@ function exportRepairTask(taskId) {
   })
 }
 
+function createRepairVideo(taskId) {
+  return request({
+    url: `/repair/tasks/${taskId}/video`,
+    method: 'POST'
+  })
+}
+
 function getPackages() {
   return request({
     url: '/payments/packages'
@@ -202,6 +209,7 @@ function listTransactions(params) {
 module.exports = {
   bindWechatPhone,
   createRepairTask,
+  createRepairVideo,
   exportRepairTask,
   getPackages,
   getMe,

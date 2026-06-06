@@ -37,6 +37,10 @@
       <view class="menu-left">🧾 充值记录</view>
       <view class="menu-right">›</view>
     </view>
+    <view class="menu-item" bindtap="goCreditRecords">
+      <view class="menu-left">🪙 点数记录</view>
+      <view class="menu-right">›</view>
+    </view>
     <view class="menu-item" bindtap="goServiceAgreement">
       <view class="menu-left">📄 服务协议</view>
       <view class="menu-right">›</view>

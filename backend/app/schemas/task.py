@@ -52,5 +52,9 @@ class GenerationTaskResponse(BaseModel):
     task_type: Optional[str] = None
     reference_image_url: Optional[str] = None
     result_url: Optional[str] = None
+    video_status: Optional[str] = None
+    video_progress: int = Field(0, ge=0, le=100)
+    result_video_url: Optional[str] = None
+    video_error_message: Optional[str] = None
     error_message: Optional[str] = None
     created_at: Optional[datetime] = None

@@ -1,3 +1,5 @@
+import asyncio
+import io
 import json
 from typing import Any
 
@@ -7,11 +9,13 @@ from sqlalchemy.future import select
 
 from app.api import deps
 from app.api.v1.endpoints.tasks import process_generation_task
-from app.db.session import get_db
+from app.core.config import settings
+from app.db.session import async_session_factory, get_db
 from app.models.billing import CreditTransaction
 from app.models.task import GenerationTask
 from app.models.user import User
 from app.schemas import ArtStyle, ExportResponse, RepairMode, RepairTaskCreate, RepairTaskResponse, TaskStatus
+from app.services.agnes_video_adapter import agnes_video_adapter
 from app.services.storage import storage_manager
 
 router = APIRouter()
@@ -25,10 +29,123 @@ def serialize_repair_task(task: GenerationTask, mode: RepairMode | None = None) 
         task_type=task.task_type,
         reference_image_url=storage_manager.resolve_public_url(task.reference_image_url, expires=900),
         result_url=storage_manager.resolve_public_url(task.result_url, expires=900),
+        video_status=task.video_status,
+        video_progress=task.video_progress or 0,
+        result_video_url=storage_manager.resolve_public_url(task.result_video_url, expires=1800),
+        video_error_message=task.video_error_message,
         error_message=task.error_message,
         created_at=task.created_at,
         mode=mode,
     )
+
+
+def normalize_video_status(value: str | None) -> str:
+    normalized = str(value or "").strip().lower()
+    if normalized in {"queued", "submitted", "pending"}:
+        return "submitted"
+    if normalized in {"processing", "running", "in_progress"}:
+        return "processing"
+    if normalized in {"completed", "success", "succeeded"}:
+        return "completed"
+    if normalized in {"failed", "error", "cancelled", "canceled"}:
+        return "failed"
+    return normalized or "submitted"
+
+
+def build_default_video_prompt() -> str:
+    return settings.AGNES_VIDEO_DEFAULT_PROMPT.strip()
+
+
+async def refund_video_credits_if_needed(db: AsyncSession, task: GenerationTask, user: User) -> None:
+    existing_charge = await db.execute(
+        select(CreditTransaction).where(
+            CreditTransaction.user_id == user.id,
+            CreditTransaction.transaction_type == "video_generate",
+            CreditTransaction.reference_id == task.id,
+        )
+    )
+    charge_count = len(existing_charge.scalars().all())
+
+    existing_refund = await db.execute(
+        select(CreditTransaction).where(
+            CreditTransaction.user_id == user.id,
+            CreditTransaction.transaction_type == "video_refund",
+            CreditTransaction.reference_id == task.id,
+        )
+    )
+    refund_count = len(existing_refund.scalars().all())
+    if refund_count >= charge_count:
+        return
+
+    user.mileage_balance = (user.mileage_balance or 0) + settings.VIDEO_GENERATION_CREDIT_COST
+    refund_tx = CreditTransaction(
+        user_id=user.id,
+        change=settings.VIDEO_GENERATION_CREDIT_COST,
+        balance_after=user.mileage_balance,
+        transaction_type="video_refund",
+        reference_id=task.id,
+        description="Refund for failed Agnes video generation",
+    )
+    db.add(refund_tx)
+
+
+async def process_repair_video_task(task_id: str) -> None:
+    async with async_session_factory() as db:
+        result = await db.execute(select(GenerationTask).where(GenerationTask.id == task_id))
+        task = result.scalars().first()
+        if not task or not task.video_external_task_id:
+            return
+
+        user_result = await db.execute(select(User).where(User.id == task.user_id))
+        user = user_result.scalars().first()
+
+        try:
+            for _ in range(120):
+                payload = await asyncio.to_thread(agnes_video_adapter.get_video_task, task.video_external_task_id)
+                video_status = normalize_video_status(payload.get("status"))
+                task.video_status = video_status
+                task.video_progress = int(payload.get("progress") or 0)
+
+                if video_status == "completed":
+                    video_url = str(payload.get("video_url") or "").strip()
+                    if not video_url:
+                        raise Exception("Agnes video completed without video_url")
+
+                    video_data, content_type = await asyncio.to_thread(agnes_video_adapter.download_video, video_url)
+                    video_ref = await asyncio.to_thread(
+                        storage_manager.upload_file,
+                        io.BytesIO(video_data),
+                        f"{task.id}.mp4",
+                        content_type or "video/mp4",
+                        "videos",
+                    )
+                    task.result_video_url = video_ref
+                    task.video_progress = 100
+                    task.video_error_message = None
+                    await db.commit()
+                    return
+
+                if video_status == "failed":
+                    task.video_error_message = str(payload.get("error") or payload.get("message") or "视频生成失败")
+                    if user:
+                        await refund_video_credits_if_needed(db, task, user)
+                    await db.commit()
+                    return
+
+                await db.commit()
+                await asyncio.sleep(5)
+
+            task.video_status = "failed"
+            task.video_error_message = "视频生成超时"
+            if user:
+                await refund_video_credits_if_needed(db, task, user)
+            await db.commit()
+        except Exception as error:
+            task.video_status = "failed"
+            task.video_error_message = str(error)
+            if user:
+                await refund_video_credits_if_needed(db, task, user)
+            await db.commit()
 
 
 def build_repair_prompt(mode: RepairMode, extra_prompt: str | None = None) -> str:
@@ -174,3 +291,74 @@ async def export_repair_result(
         charged=True,
         transaction_id=transaction.id,
     )
+
+
+@router.post("/tasks/{task_id}/video", response_model=RepairTaskResponse, response_model_by_alias=False)
+async def create_repair_video(
+    task_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(deps.get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    if settings.MOCK_IMAGE_GENERATION:
+        raise HTTPException(status_code=409, detail="请先关闭 MOCK_IMAGE_GENERATION 后再生成视频")
+
+    result = await db.execute(
+        select(GenerationTask).where(
+            GenerationTask.id == task_id,
+            GenerationTask.user_id == current_user.id,
+        )
+    )
+    task = result.scalars().first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Repair task not found")
+    if task.status != TaskStatus.COMPLETED or not task.result_url:
+        raise HTTPException(status_code=409, detail="请先完成照片修复后再生成视频")
+
+    if task.video_status in {"submitted", "processing"}:
+        return serialize_repair_task(task)
+    if task.video_status == "completed" and task.result_video_url:
+        return serialize_repair_task(task)
+
+    if (current_user.mileage_balance or 0) < settings.VIDEO_GENERATION_CREDIT_COST:
+        raise HTTPException(status_code=402, detail="Insufficient video credits")
+
+    prompt = build_default_video_prompt()
+    source_image_url = storage_manager.resolve_public_url(task.result_url, expires=1800)
+    if not source_image_url:
+        raise HTTPException(status_code=409, detail="修复图片地址无效，无法生成视频")
+
+    create_payload = await asyncio.to_thread(
+        agnes_video_adapter.create_video_task,
+        prompt,
+        source_image_url,
+    )
+
+    external_task_id = str(create_payload.get("id") or "").strip()
+    if not external_task_id:
+        raise HTTPException(status_code=502, detail="Agnes video task creation failed: missing task id")
+
+    current_user.mileage_balance = (current_user.mileage_balance or 0) - settings.VIDEO_GENERATION_CREDIT_COST
+    transaction = CreditTransaction(
+        user_id=current_user.id,
+        change=-settings.VIDEO_GENERATION_CREDIT_COST,
+        balance_after=current_user.mileage_balance,
+        transaction_type="video_generate",
+        reference_id=task.id,
+        description="Generate old-photo animation video",
+    )
+    db.add(transaction)
+
+    task.video_external_task_id = external_task_id
+    task.video_status = normalize_video_status(create_payload.get("status"))
+    task.video_progress = int(create_payload.get("progress") or 0)
+    task.video_error_message = None
+    task.video_prompt = prompt
+    task.result_video_url = None
+
+    await db.commit()
+    await db.refresh(current_user)
+    await db.refresh(task)
+
+    background_tasks.add_task(process_repair_video_task, str(task.id))
+    return serialize_repair_task(task)

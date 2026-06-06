@@ -46,6 +46,18 @@ def create_admin_token(admin_user: AdminUser) -> str:
 def serialize_task(task: GenerationTask) -> AdminTaskResponse:
     style = task.style.value if hasattr(task.style, "value") else str(task.style)
     aspect_ratio = task.aspect_ratio.value if hasattr(task.aspect_ratio, "value") else str(task.aspect_ratio)
+    trace_data: dict[str, Any] = {}
+    if task.prompt_trace:
+        try:
+            raw_trace = json.loads(task.prompt_trace)
+            if isinstance(raw_trace, dict):
+                trace_data = raw_trace
+        except Exception:
+            trace_data = {}
+    image_model_attempts = trace_data.get("image_model_attempts")
+    if not isinstance(image_model_attempts, list):
+        image_model_attempts = []
+    has_video = bool(task.video_external_task_id or task.video_status or task.result_video_url)
     return AdminTaskResponse(
         task_id=task.id,
         user_id=task.user_id,
@@ -60,6 +72,15 @@ def serialize_task(task: GenerationTask) -> AdminTaskResponse:
         progress=task.progress or 0,
         error_message=task.error_message,
         external_task_id=task.external_task_id,
+        video_status=task.video_status,
+        video_progress=task.video_progress or 0,
+        result_video_url=storage_manager.resolve_public_url(task.result_video_url, expires=1800),
+        video_error_message=task.video_error_message,
+        video_prompt=task.video_prompt,
+        video_external_task_id=task.video_external_task_id,
+        image_model_used=trace_data.get("image_model_used"),
+        image_model_attempts=[str(item) for item in image_model_attempts if str(item).strip()],
+        video_model_used="agnes-video-v2.0" if has_video else None,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )

@@ -7,6 +7,7 @@
     "pages/auth/login",
     "pages/personal-centre/recharge",
     "pages/personal-centre/recharge-records",
+    "pages/personal-centre/credit-records",
     "pages/personal-centre/help-feedback",
     "pages/personal-centre/service-agreement",
     "pages/personal-centre/privacy-policy"

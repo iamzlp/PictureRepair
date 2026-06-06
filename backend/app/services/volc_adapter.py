@@ -6,6 +6,12 @@ import base64
 from app.core.config import settings
 from app.services.volc_signer import VolcSigner
 
+
+class ImageGenerationError(Exception):
+    def __init__(self, message: str, meta: dict | None = None):
+        super().__init__(message)
+        self.meta = meta or {}
+
 class VolcAdapter:
     def __init__(self):
         self.ak = settings.VOLC_ACCESS_KEY
@@ -17,6 +23,21 @@ class VolcAdapter:
         self.model_type = getattr(settings, 'IMAGE_MODEL', 'doubao')
 
     def generate_image(self, prompt: str, style: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> bytes:
+        image_data, _ = self.generate_image_with_meta(
+            prompt=prompt,
+            style=style,
+            aspect_ratio=aspect_ratio,
+            reference_image_urls=reference_image_urls,
+        )
+        return image_data
+
+    def generate_image_with_meta(
+        self,
+        prompt: str,
+        style: str,
+        aspect_ratio: str,
+        reference_image_urls: list[str] = None,
+    ) -> tuple[bytes, dict]:
         primary_model = str(settings.IMAGE_MODEL or self.model_type or "agnes").strip().lower()
         fallback_model = str(settings.IMAGE_MODEL_FALLBACK or "").strip().lower()
         auto_fallback = bool(settings.IMAGE_MODEL_AUTO_FALLBACK)
@@ -27,30 +48,47 @@ class VolcAdapter:
         )
 
         attempted_errors: list[str] = []
+        attempts: list[str] = []
         models_to_try = [primary_model]
         if auto_fallback and fallback_model and fallback_model != primary_model:
             models_to_try.append(fallback_model)
 
         for index, model_name in enumerate(models_to_try):
             try:
-                return self._generate_with_model(
+                image_data = self._generate_with_model(
                     model_name=model_name,
                     prompt=prompt,
                     style=style,
                     aspect_ratio=aspect_ratio,
                     reference_image_urls=reference_image_urls,
                 )
+                attempts.append(model_name)
+                return image_data, {
+                    "image_model_used": model_name,
+                    "image_model_attempts": attempts,
+                }
             except Exception as error:
                 error_message = f"{model_name}: {error}"
                 attempted_errors.append(error_message)
+                attempts.append(f"{model_name}(failed)")
                 is_last_attempt = index == len(models_to_try) - 1
                 if is_last_attempt:
-                    raise Exception(
-                        " | ".join(attempted_errors)
+                    raise ImageGenerationError(
+                        " | ".join(attempted_errors),
+                        meta={
+                            "image_model_used": None,
+                            "image_model_attempts": attempts,
+                        },
                     ) from error
                 print(f"[Image Generation] {model_name} failed, fallback to {models_to_try[index + 1]}: {error}")
 
-        raise Exception("No image model was executed")
+        raise ImageGenerationError(
+            "No image model was executed",
+            meta={
+                "image_model_used": None,
+                "image_model_attempts": attempts,
+            },
+        )
 
     def _generate_with_model(
         self,

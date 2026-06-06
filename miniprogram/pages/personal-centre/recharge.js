@@ -84,8 +84,9 @@ Page({
       await auth.loadUser()
       wx.showToast({ title: '支付成功', icon: 'success' })
 
-      if (this.data.from === 'export' && this.data.taskId && this.data.source) {
+      if ((this.data.from === 'export' || this.data.from === 'video') && this.data.taskId && this.data.source) {
         exportFlow.setPendingExportAction({
+          action: this.data.from,
           source: this.data.source,
           taskId: this.data.taskId
         })

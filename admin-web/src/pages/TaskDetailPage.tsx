@@ -113,6 +113,7 @@ export function TaskDetailPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <StatusBadge value={task.status} label={prettifyTaskStatus(task.status)} />
                   {task.task_type ? <StatusBadge value={task.task_type} label={task.task_type} /> : null}
+                  {task.video_status ? <StatusBadge value={task.video_status} label={`视频 ${prettifyTaskStatus(task.video_status)}`} /> : null}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {[
@@ -120,6 +121,10 @@ export function TaskDetailPage() {
                     ['用户 ID', task.user_id || '—'],
                     ['批次 ID', task.batch_id || '—'],
                     ['外部任务 ID', task.external_task_id || '—'],
+                    ['图片大模型', task.image_model_used || '待记录'],
+                    ['模型尝试链路', task.image_model_attempts?.length ? task.image_model_attempts.join(' -> ') : '—'],
+                    ['视频大模型', task.video_model_used || '未生成视频'],
+                    ['视频任务 ID', task.video_external_task_id || '—'],
                     ['风格', task.style],
                     ['画幅', task.aspect_ratio],
                     ['创建时间', formatDateTime(task.created_at)],
@@ -136,6 +141,7 @@ export function TaskDetailPage() {
                 <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">执行概览</p>
                 <p className="mt-4 font-display text-5xl text-archive-copper">{task.progress}%</p>
                 <p className="mt-2 text-sm text-archive-mist">当前进度</p>
+                {task.video_status ? <p className="mt-3 text-sm text-archive-paper/80">视频进度：{task.video_progress}%</p> : null}
                 {task.user_id ? (
                   <Link
                     to={`/tasks?user_id=${task.user_id}`}
@@ -171,6 +177,30 @@ export function TaskDetailPage() {
             </div>
           </section>
 
+          <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-soft-panel">
+              <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">生成视频</p>
+              <div className="mt-4 overflow-hidden rounded-[24px] border border-white/10 bg-black/20">
+                {task.result_video_url ? (
+                  <video src={task.result_video_url} controls className="h-[420px] w-full object-cover" />
+                ) : (
+                  <div className="flex h-[420px] items-center justify-center text-sm text-archive-paper/40">
+                    {task.video_status ? `当前视频状态：${prettifyTaskStatus(task.video_status)}` : '尚未生成视频'}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-soft-panel">
+              <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">视频信息</p>
+              <div className="mt-4 space-y-4 text-sm text-archive-paper/80">
+                <p>视频状态：{task.video_status ? prettifyTaskStatus(task.video_status) : '未生成'}</p>
+                <p>视频进度：{task.video_progress || 0}%</p>
+                <p>视频模型：{task.video_model_used || '—'}</p>
+                <p>视频错误：{task.video_error_message || '当前没有视频错误信息。'}</p>
+              </div>
+            </div>
+          </section>
+
           <section className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
             <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-soft-panel">
               <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">任务描述</p>
@@ -183,6 +213,13 @@ export function TaskDetailPage() {
               </p>
             </div>
           </section>
+
+          {task.video_prompt ? (
+            <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-soft-panel">
+              <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">视频提示词</p>
+              <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-8 text-white">{task.video_prompt}</p>
+            </section>
+          ) : null}
         </>
       ) : null}
     </div>

@@ -142,6 +142,10 @@ Page({
     wx.navigateTo({ url: '/pages/personal-centre/recharge-records' })
   },
 
+  goCreditRecords() {
+    wx.navigateTo({ url: '/pages/personal-centre/credit-records' })
+  },
+
   goServiceAgreement() {
     wx.navigateTo({ url: '/pages/personal-centre/service-agreement' })
   },

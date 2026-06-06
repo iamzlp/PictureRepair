@@ -1,0 +1,23 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  <view wx:else>
+    <view wx:if="{{transactions.length}}" class="list">
+      <view wx:for="{{transactions}}" wx:key="id" class="item">
+        <view class="left">
+          <view class="time">{{item.timeText}}</view>
+          <view class="name-row">
+            <view class="name">{{item.titleText}}</view>
+            <view class="balance">{{item.balanceText}}</view>
+          </view>
+          <view class="description">{{item.descriptionText}}</view>
+        </view>
+        <view class="amount {{item.changeClass}}">{{item.changeText}}</view>
+      </view>
+    </view>
+    <view wx:else class="empty">还没有点数记录</view>
+    <button wx:if="{{transactions.length}}" class="more-btn" bindtap="onLoadMore" disabled="{{loadingMore || noMore}}">
+      {{noMore ? '没有更多了' : '查看更多点数记录'}}
+      <text class="arrow">⌄</text>
+    </button>
+  </view>
+</view>

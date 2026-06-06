@@ -69,6 +69,15 @@ class AdminTaskResponse(BaseModel):
     progress: int = 0
     error_message: Optional[str] = None
     external_task_id: Optional[str] = None
+    video_status: Optional[str] = None
+    video_progress: int = 0
+    result_video_url: Optional[str] = None
+    video_error_message: Optional[str] = None
+    video_prompt: Optional[str] = None
+    video_external_task_id: Optional[str] = None
+    image_model_used: Optional[str] = None
+    image_model_attempts: list[str] = Field(default_factory=list)
+    video_model_used: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

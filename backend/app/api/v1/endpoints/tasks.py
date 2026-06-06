@@ -26,9 +26,23 @@ def serialize_task(task: GenerationTask) -> GenerationTaskResponse:
         task_type=task.task_type,
         reference_image_url=storage_manager.resolve_public_url(task.reference_image_url, expires=900),
         result_url=storage_manager.resolve_public_url(task.result_url, expires=900),
+        video_status=task.video_status,
+        video_progress=task.video_progress or 0,
+        result_video_url=storage_manager.resolve_public_url(task.result_video_url, expires=1800),
+        video_error_message=task.video_error_message,
         error_message=task.error_message,
         created_at=task.created_at,
     )
+
+
+def load_task_trace(task: GenerationTask) -> dict:
+    if not task.prompt_trace:
+        return {}
+    try:
+        payload = json.loads(task.prompt_trace)
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
 
 # -------------------------------------------------------------------
 # Real Worker (Volcengine + Storage)
@@ -87,8 +101,8 @@ async def process_generation_task(task_id: str):
                 await db.commit()
                 return
 
-            image_data = await asyncio.to_thread(
-                volc_adapter.generate_image,
+            image_data, generation_meta = await asyncio.to_thread(
+                volc_adapter.generate_image_with_meta,
                 prompt=task.prompt,
                 style=style_value,
                 aspect_ratio=task.aspect_ratio,
@@ -96,6 +110,9 @@ async def process_generation_task(task_id: str):
                     storage_manager.resolve_public_url(url, expires=900) for url in reference_urls
                 ]
             )
+            trace_data = load_task_trace(task)
+            trace_data.update(generation_meta)
+            task.prompt_trace = json.dumps(trace_data, ensure_ascii=False)
             
             task.progress = 80
             await db.commit()
@@ -117,6 +134,11 @@ async def process_generation_task(task_id: str):
         except Exception as e:
             print(f"Task {task_id} failed: {e}")
             traceback.print_exc()
+            trace_data = load_task_trace(task)
+            error_meta = getattr(e, "meta", None)
+            if isinstance(error_meta, dict):
+                trace_data.update(error_meta)
+                task.prompt_trace = json.dumps(trace_data, ensure_ascii=False)
             task.status = TaskStatus.FAILED
             task.error_message = str(e)
             await db.commit()

@@ -5,10 +5,39 @@
     <view class="badge">修复后</view>
   </view>
 
-  <button class="download-btn" loading="{{exporting}}" bindtap="onDownload" disabled="{{!resultUrl}}">
-    下载修复后的照片
-  </button>
+  <view class="action-row">
+    <button class="download-btn half" loading="{{exporting}}" bindtap="onDownload" disabled="{{!resultUrl}}">
+      下载修复后的照片
+    </button>
+    <button class="video-btn half" loading="{{generatingVideo}}" bindtap="onGenerateVideo" disabled="{{!resultUrl || videoStatus === 'submitted' || videoStatus === 'processing' || videoStatus === 'completed'}}">
+      {{videoStatus === 'submitted' || videoStatus === 'processing' ? '生成中...' : (videoStatus === 'completed' ? '视频已生成' : '生成视频(10点)')}}
+    </button>
+  </view>
   <view class="download-tip">高清无水印原图已保存在您的账户</view>
+
+  <view wx:if="{{videoStatus || videoUrl}}" class="section">
+    <view class="section-head">
+      <view class="section-title">动态视频</view>
+      <view class="section-meta" wx:if="{{videoStatus === 'submitted' || videoStatus === 'processing'}}">生成中 {{videoProgress}}%</view>
+      <view class="section-meta" wx:elif="{{videoStatus === 'completed'}}">已生成</view>
+      <view class="section-meta error" wx:elif="{{videoStatus === 'failed'}}">生成失败</view>
+    </view>
+    <view class="video-box">
+      <video
+        wx:if="{{videoUrl}}"
+        class="video-player"
+        src="{{videoUrl}}"
+        controls
+        show-center-play-btn
+        objectFit="contain"
+      ></video>
+      <view wx:elif="{{videoStatus === 'submitted' || videoStatus === 'processing'}}" class="video-placeholder">正在生成动态视频，请稍候...</view>
+      <view wx:elif="{{videoStatus === 'failed'}}" class="video-placeholder">{{videoErrorMessage || '视频生成失败'}}</view>
+    </view>
+    <button wx:if="{{videoUrl}}" class="download-video-btn" loading="{{downloadingVideo}}" bindtap="onDownloadVideo">
+      下载生成的视频
+    </button>
+  </view>
 
   <view class="section">
     <view class="section-head">

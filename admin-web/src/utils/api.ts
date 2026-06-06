@@ -54,6 +54,15 @@ export type AdminTask = {
   progress: number
   error_message?: string
   external_task_id?: string
+  video_status?: string
+  video_progress: number
+  result_video_url?: string
+  video_error_message?: string
+  video_prompt?: string
+  video_external_task_id?: string
+  image_model_used?: string
+  image_model_attempts: string[]
+  video_model_used?: string
   created_at?: string
   updated_at?: string
 }

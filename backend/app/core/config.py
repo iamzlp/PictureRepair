@@ -59,6 +59,17 @@ class Settings(BaseSettings):
     # Agnes Image API
     AGNES_API_KEY: Optional[str] = None
     AGNES_API_BASE_URL: str = "https://apihub.agnes-ai.com/v1"
+    AGNES_VIDEO_DEFAULT_PROMPT: str = (
+        "Animate the restored old photo naturally. Keep the person's identity, facial features, age, clothing, and composition unchanged. "
+        "The person should blink gently, show a subtle warm smile, and have only very slight natural head movement and breathing motion. "
+        "Keep the camera still and the motion minimal. Do not change the framing, do not add new body movement, do not alter the number of people, "
+        "and do not introduce flicker, distortion, ghosting, or face redraw. Preserve the realistic restored old-photo texture and nostalgic feeling."
+    )
+    AGNES_VIDEO_NEGATIVE_PROMPT: str = (
+        "no large motion, no talking, no mouth opening, no waving, no walking, no identity change, no reframing, "
+        "no extra people, no face redraw, no flicker, no ghosting, no distortion"
+    )
+    VIDEO_GENERATION_CREDIT_COST: int = 10
 
     # Image Model: 'jimeng' (即梦4.0) / 'doubao' (豆包/Seedream 5.0) / 'agnes' (Agnes Image 2.1 Flash)
     IMAGE_MODEL: str = "agnes"

@@ -165,6 +165,7 @@ export function TasksPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <StatusBadge value={task.status} label={prettifyTaskStatus(task.status)} />
                     {task.task_type ? <StatusBadge value={task.task_type} label={task.task_type} /> : null}
+                    {task.video_status ? <StatusBadge value={task.video_status} label={`视频 ${prettifyTaskStatus(task.video_status)}`} /> : null}
                   </div>
                   <div>
                     <p className="text-sm text-archive-paper/55">任务 ID</p>
@@ -175,6 +176,8 @@ export function TasksPage() {
                     <p>风格：{task.style}</p>
                     <p>画幅：{task.aspect_ratio}</p>
                     <p>创建：{formatDateTime(task.created_at)}</p>
+                    <p>图片模型：{task.image_model_used || '待记录'}</p>
+                    <p>视频状态：{task.video_status ? prettifyTaskStatus(task.video_status) : '未生成'}</p>
                   </div>
                 </div>
                 {task.status == 'failed' ? (
@@ -223,6 +226,18 @@ export function TasksPage() {
                         {task.result_url ? <img src={task.result_url} alt="结果图" className="h-40 w-full object-cover" /> : <div className="flex h-40 items-center justify-center text-xs text-archive-paper/40">暂无结果图</div>}
                       </div>
                     </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <p className="text-xs text-archive-mist">生成视频</p>
+                      <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                        {task.result_video_url ? (
+                          <video src={task.result_video_url} controls className="h-52 w-full object-cover" />
+                        ) : (
+                          <div className="flex h-32 items-center justify-center text-xs text-archive-paper/40">
+                            {task.video_status ? `视频状态：${prettifyTaskStatus(task.video_status)}` : '未生成视频'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
@@ -232,6 +247,8 @@ export function TasksPage() {
                     <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">进度 / 错误</p>
                     <p className="mt-3 text-sm text-white">当前进度：{task.progress}%</p>
                     <p className="mt-3 text-sm leading-7 text-archive-mist">{task.error_message || '当前没有错误信息。'}</p>
+                    {task.video_status ? <p className="mt-3 text-sm text-white">视频进度：{task.video_progress}%</p> : null}
+                    {task.video_status ? <p className="mt-3 text-sm leading-7 text-archive-mist">{task.video_error_message || '当前没有视频错误信息。'}</p> : null}
                   </div>
                 </div>
               </div>
