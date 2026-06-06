@@ -36,17 +36,27 @@ def summarize_video_payload(payload: Any, limit: int = 2500) -> str:
 def collect_video_url_candidates(payload: Any) -> list[str]:
     candidates: list[str] = []
 
+    def normalize_url(value: Any) -> str | None:
+        if not isinstance(value, str):
+            return None
+        cleaned = value.strip().strip("`").strip().strip('"').strip("'").strip()
+        if cleaned.startswith("http://") or cleaned.startswith("https://"):
+            return cleaned
+        return None
+
     def visit(value: Any) -> None:
         if isinstance(value, dict):
             for key, item in value.items():
                 key_text = str(key).lower()
                 if "video" in key_text or key_text in {"url", "uri", "file"}:
-                    if isinstance(item, str) and item.startswith("http"):
-                        candidates.append(item)
+                    normalized = normalize_url(item)
+                    if normalized:
+                        candidates.append(normalized)
                     elif isinstance(item, list):
                         for sub_item in item:
-                            if isinstance(sub_item, str) and sub_item.startswith("http"):
-                                candidates.append(sub_item)
+                            normalized_sub_item = normalize_url(sub_item)
+                            if normalized_sub_item:
+                                candidates.append(normalized_sub_item)
                             elif isinstance(sub_item, dict):
                                 visit(sub_item)
                     elif isinstance(item, dict):
@@ -64,6 +74,19 @@ def collect_video_url_candidates(payload: Any) -> list[str]:
         if item not in unique:
             unique.append(item)
     return unique[:10]
+
+
+def extract_video_url(payload: Any) -> str:
+    if isinstance(payload, dict):
+        raw_url = payload.get("video_url")
+        if isinstance(raw_url, str):
+            normalized = raw_url.strip().strip("`").strip().strip('"').strip("'").strip()
+            if normalized.startswith("http://") or normalized.startswith("https://"):
+                return normalized
+    candidate_urls = collect_video_url_candidates(payload)
+    if candidate_urls:
+        return candidate_urls[0]
+    return ""
 
 
 def serialize_repair_task(task: GenerationTask, mode: RepairMode | None = None) -> RepairTaskResponse:
@@ -190,7 +213,7 @@ async def process_repair_video_task(task_id: str) -> None:
                 )
 
                 if video_status == "completed":
-                    video_url = str(payload.get("video_url") or "").strip()
+                    video_url = extract_video_url(payload)
                     if not video_url:
                         print(
                             "[Repair Video Worker Missing URL] "
@@ -210,7 +233,7 @@ async def process_repair_video_task(task_id: str) -> None:
                     print(
                         "[Repair Video Worker Upload Success] "
                         f"task_id={task.id}, external_task_id={task.video_external_task_id}, "
-                        f"content_type={content_type}, video_ref={video_ref}"
+                        f"content_type={content_type}, storage_type={storage_manager.storage_type}, video_ref={video_ref}"
                     )
                     task.result_video_url = video_ref
                     task.video_progress = 100
