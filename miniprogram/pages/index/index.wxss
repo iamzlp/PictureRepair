@@ -312,6 +312,14 @@
   padding: 24rpx;
 }
 
+.bottom-actions {
+  margin-top: 22rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+}
+
 .steps-title {
   font-size: 28rpx;
   font-weight: 700;

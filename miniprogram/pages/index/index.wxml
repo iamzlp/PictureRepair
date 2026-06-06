@@ -87,4 +87,9 @@
       </view>
     </view>
   </view>
+
+  <view class="bottom-actions">
+    <button class="btn btn-ghost" open-type="share" hover-class="none">一键转发</button>
+    <button class="btn btn-primary" open-type="contact" session-from="scene=index_feedback" hover-class="none">意见反馈</button>
+  </view>
 </view>

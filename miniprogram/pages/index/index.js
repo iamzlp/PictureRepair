@@ -285,5 +285,12 @@ Page({
       canCreate: Boolean(auth.getToken() && this.data.photoUrl && !busy),
       actionText: busy ? this.data.actionText : '开始修复'
     })
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '老照片一键修复，重温美好回忆',
+      path: '/pages/index/index'
+    }
   }
 })
