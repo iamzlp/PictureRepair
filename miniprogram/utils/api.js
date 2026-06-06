@@ -113,6 +113,14 @@ function getMe() {
   })
 }
 
+function updateMe(payload) {
+  return request({
+    url: '/auth/me',
+    method: 'PUT',
+    data: payload || {}
+  })
+}
+
 function submitFeedback(payload) {
   return request({
     url: '/feedback',
@@ -198,6 +206,7 @@ module.exports = {
   getPackages,
   getMe,
   getRepairTask,
+  updateMe,
   listOrders,
   listTasks,
   listTransactions,

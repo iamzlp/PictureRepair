@@ -6,7 +6,10 @@ Page({
     user: null,
     repairedCount: 0,
     balance: 0,
-    avatarLoadErrorShown: false
+    avatarLoadErrorShown: false,
+    avatarDraft: '',
+    nicknameDraft: '',
+    savingProfile: false
   },
 
   async onShow() {
@@ -36,7 +39,9 @@ Page({
         user,
         repairedCount,
         balance: user && typeof user.mileage_balance === 'number' ? user.mileage_balance : (user && user.mileage_balance ? user.mileage_balance : 0),
-        avatarLoadErrorShown: false
+        avatarLoadErrorShown: false,
+        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
+        nicknameDraft: user && user.nickname ? user.nickname : ''
       })
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' })
@@ -57,6 +62,47 @@ Page({
       icon: 'none',
       duration: 3000
     })
+  },
+
+  onChooseAvatar(event) {
+    const avatarUrl = event && event.detail ? (event.detail.avatarUrl || '') : ''
+    if (!avatarUrl) return
+    this.setData({ avatarDraft: avatarUrl })
+  },
+
+  onNicknameInput(event) {
+    const nicknameDraft = event && event.detail ? (event.detail.value || '') : ''
+    this.setData({ nicknameDraft })
+  },
+
+  async onSaveProfile() {
+    if (this.data.savingProfile) return
+
+    const nickname = this.data.nicknameDraft ? String(this.data.nicknameDraft).trim() : ''
+    const avatarUrl = this.data.avatarDraft || ''
+    if (!nickname && !avatarUrl) {
+      wx.showToast({ title: '请先设置头像或昵称', icon: 'none' })
+      return
+    }
+
+    this.setData({ savingProfile: true })
+    try {
+      const user = await auth.updateUserProfile({
+        nickname,
+        avatarUrl
+      })
+      this.setData({
+        user,
+        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
+        nicknameDraft: user && user.nickname ? user.nickname : '',
+        avatarLoadErrorShown: false
+      })
+      wx.showToast({ title: '资料已更新', icon: 'success' })
+    } catch (error) {
+      wx.showToast({ title: error.message || '更新失败', icon: 'none' })
+    } finally {
+      this.setData({ savingProfile: false })
+    }
   },
 
   goRecharge() {

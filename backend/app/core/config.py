@@ -78,7 +78,7 @@ class Settings(BaseSettings):
 
     # JWT Security
     SECRET_KEY: str = "changethis-secret-key-in-production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30 # 30 days
 
     class Config:
         env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", ".env")

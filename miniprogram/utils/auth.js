@@ -60,33 +60,6 @@ function getWechatCode() {
   })
 }
 
-function getWechatProfile() {
-  return new Promise((resolve) => {
-    if (!wx.getUserProfile) {
-      resolve(null)
-      return
-    }
-
-    wx.getUserProfile({
-      desc: '用于展示微信头像和昵称',
-      success(res) {
-        const userInfo = res && res.userInfo ? res.userInfo : null
-        if (!userInfo) {
-          resolve(null)
-          return
-        }
-        resolve({
-          nickname: userInfo.nickName || '',
-          avatar_url: userInfo.avatarUrl || ''
-        })
-      },
-      fail() {
-        resolve(null)
-      }
-    })
-  })
-}
-
 function buildProfilePayload(profile) {
   if (!profile || typeof profile !== 'object') return {}
   const payload = {}
@@ -113,13 +86,6 @@ function normalizeAvatarUploadError(error) {
 async function prepareWechatProfile(profile) {
   const payload = buildProfilePayload(profile)
   if (!payload.nickname && !payload.avatarUrl) {
-    const fallback = await getWechatProfile()
-    if (fallback) {
-      return {
-        nickname: fallback.nickname || '',
-        avatar_url: fallback.avatar_url || ''
-      }
-    }
     return {}
   }
 
@@ -157,12 +123,7 @@ async function loginWithWechatPhone(phoneCode, profile) {
 
   try {
     await loginWithWechat()
-    const profilePayload = await prepareWechatProfile(profile)
-    const result = await api.bindWechatPhone({
-      code: phoneCode,
-      nickname: profilePayload.nickname || undefined,
-      avatar_url: profilePayload.avatar_url || undefined
-    })
+    const result = await api.bindWechatPhone({ code: phoneCode })
     if (result && result.access_token) {
       setToken(result.access_token, 'wechat')
     }
@@ -175,6 +136,18 @@ async function loginWithWechatPhone(phoneCode, profile) {
     clearToken()
     throw error
   }
+}
+
+async function updateUserProfile(profile) {
+  const profilePayload = await prepareWechatProfile(profile)
+  const user = await api.updateMe({
+    nickname: Object.prototype.hasOwnProperty.call(profilePayload, 'nickname') ? (profilePayload.nickname || '') : undefined,
+    avatar_url: Object.prototype.hasOwnProperty.call(profilePayload, 'avatar_url') ? (profilePayload.avatar_url || '') : undefined
+  })
+  const app = getApp()
+  app.globalData.user = user
+  wx.setStorageSync(USER_PROFILE_KEY, user || null)
+  return user
 }
 
 function hasBoundPhone(user) {
@@ -223,5 +196,6 @@ module.exports = {
   loginWithWechat,
   loadUser,
   navigateToLogin,
-  setToken
+  setToken,
+  updateUserProfile
 }

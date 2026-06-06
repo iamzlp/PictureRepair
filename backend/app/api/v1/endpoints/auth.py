@@ -15,7 +15,7 @@ from app.models.feedback import UserFeedback
 from app.models.photo import Photo
 from app.models.task import GenerationTask
 from app.models.user import User
-from app.schemas.user import Token, UserResponse, WeChatLoginRequest, WeChatPhoneLoginResponse, WeChatPhoneRequest
+from app.schemas.user import Token, UserResponse, UserUpdate, WeChatLoginRequest, WeChatPhoneLoginResponse, WeChatPhoneRequest
 from app.services.storage import storage_manager
 
 router = APIRouter()
@@ -246,4 +246,24 @@ async def read_users_me(
     """
     Get current user.
     """
+    return serialize_user(current_user)
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_users_me(
+    request: UserUpdate,
+    current_user: User = Depends(deps.get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    nickname = (request.nickname or "").strip()
+    avatar_url = (request.avatar_url or "").strip()
+
+    if request.nickname is not None:
+        current_user.nickname = nickname[:64] if nickname else None
+
+    if request.avatar_url is not None:
+        current_user.avatar_url = storage_manager.normalize_file_reference(avatar_url) if avatar_url else None
+
+    await db.commit()
+    await db.refresh(current_user)
     return serialize_user(current_user)
