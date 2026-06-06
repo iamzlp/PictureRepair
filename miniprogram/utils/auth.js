@@ -158,11 +158,15 @@ async function loginWithWechatPhone(phoneCode, profile) {
   try {
     await loginWithWechat()
     const profilePayload = await prepareWechatProfile(profile)
-    const user = await api.bindWechatPhone({
+    const result = await api.bindWechatPhone({
       code: phoneCode,
       nickname: profilePayload.nickname || undefined,
       avatar_url: profilePayload.avatar_url || undefined
     })
+    if (result && result.access_token) {
+      setToken(result.access_token, 'wechat')
+    }
+    const user = result && result.user ? result.user : result
     const app = getApp()
     app.globalData.user = user
     wx.setStorageSync(USER_PROFILE_KEY, user || null)

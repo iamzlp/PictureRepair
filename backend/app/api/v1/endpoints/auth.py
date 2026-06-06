@@ -3,14 +3,19 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import update
 from sqlalchemy.future import select
 
 from app.api import deps
 from app.core import security
 from app.core.config import settings
 from app.db.session import get_db, AsyncSession
+from app.models.billing import CreditTransaction, Order
+from app.models.feedback import UserFeedback
+from app.models.photo import Photo
+from app.models.task import GenerationTask
 from app.models.user import User
-from app.schemas.user import Token, UserResponse, WeChatLoginRequest, WeChatPhoneRequest
+from app.schemas.user import Token, UserResponse, WeChatLoginRequest, WeChatPhoneLoginResponse, WeChatPhoneRequest
 from app.services.storage import storage_manager
 
 router = APIRouter()
@@ -35,6 +40,36 @@ def serialize_user(user: User) -> UserResponse:
         mileage_balance=user.mileage_balance or 0,
         created_at=user.created_at,
     )
+
+
+def apply_user_profile(user: User, request: WeChatPhoneRequest, fallback_user: User | None = None) -> None:
+    nickname = (request.nickname or "").strip()
+    avatar_url = (request.avatar_url or "").strip()
+
+    if nickname:
+        user.nickname = nickname[:64]
+    elif fallback_user and not user.nickname and fallback_user.nickname:
+        fallback_nickname = fallback_user.nickname.strip()
+        if fallback_nickname:
+            user.nickname = fallback_nickname[:64]
+
+    if avatar_url:
+        user.avatar_url = storage_manager.normalize_file_reference(avatar_url)
+    elif fallback_user and not user.avatar_url and fallback_user.avatar_url:
+        user.avatar_url = fallback_user.avatar_url
+
+
+async def reassign_user_records(
+    db: AsyncSession,
+    from_user_id: str,
+    to_user_id: str,
+) -> None:
+    for model in (GenerationTask, Photo, Order, CreditTransaction, UserFeedback):
+        await db.execute(
+            update(model)
+            .where(model.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
 
 @router.post("/login/mock", response_model=Token)
 async def login_mock(
@@ -111,7 +146,7 @@ async def login_wechat(
     return create_user_token(user)
 
 
-@router.post("/phone/wechat", response_model=UserResponse)
+@router.post("/phone/wechat", response_model=WeChatPhoneLoginResponse)
 async def bind_wechat_phone(
     request: WeChatPhoneRequest,
     current_user: User = Depends(deps.get_current_user),
@@ -125,13 +160,15 @@ async def bind_wechat_phone(
         digits = "".join(str(ord(char) % 10) for char in current_user.id)
         mock_phone = f"13{digits[:9].ljust(9, '0')}"
         current_user.phone = mock_phone
-        if request.nickname:
-            current_user.nickname = request.nickname.strip()[:64]
-        if request.avatar_url:
-            current_user.avatar_url = storage_manager.normalize_file_reference(request.avatar_url.strip())
+        apply_user_profile(current_user, request)
         await db.commit()
         await db.refresh(current_user)
-        return serialize_user(current_user)
+        token = create_user_token(current_user)
+        return WeChatPhoneLoginResponse(
+            access_token=token.access_token,
+            token_type=token.token_type,
+            user=serialize_user(current_user),
+        )
 
     if not settings.WECHAT_APPID or not settings.WECHAT_SECRET:
         raise HTTPException(status_code=500, detail="WECHAT_APPID/WECHAT_SECRET not configured")
@@ -168,16 +205,39 @@ async def bind_wechat_phone(
     existing = await db.execute(select(User).where(User.phone == phone_number))
     existing_user = existing.scalars().first()
     if existing_user and existing_user.id != current_user.id:
-        raise HTTPException(status_code=409, detail="Phone number is already bound")
+        source_openid = current_user.openid
+        source_unionid = current_user.unionid
+
+        current_user.openid = None
+        current_user.unionid = None
+        await db.flush()
+
+        existing_user.openid = source_openid or existing_user.openid
+        existing_user.unionid = source_unionid or existing_user.unionid
+        apply_user_profile(existing_user, request, fallback_user=current_user)
+
+        await reassign_user_records(db, current_user.id, existing_user.id)
+        await db.delete(current_user)
+        await db.commit()
+        await db.refresh(existing_user)
+
+        token = create_user_token(existing_user)
+        return WeChatPhoneLoginResponse(
+            access_token=token.access_token,
+            token_type=token.token_type,
+            user=serialize_user(existing_user),
+        )
 
     current_user.phone = phone_number
-    if request.nickname:
-        current_user.nickname = request.nickname.strip()[:64]
-    if request.avatar_url:
-        current_user.avatar_url = storage_manager.normalize_file_reference(request.avatar_url.strip())
+    apply_user_profile(current_user, request)
     await db.commit()
     await db.refresh(current_user)
-    return serialize_user(current_user)
+    token = create_user_token(current_user)
+    return WeChatPhoneLoginResponse(
+        access_token=token.access_token,
+        token_type=token.token_type,
+        user=serialize_user(current_user),
+    )
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(
