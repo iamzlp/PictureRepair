@@ -2,7 +2,7 @@
   <view class="title">个人中心</view>
 
   <view class="card profile">
-    <button class="avatar avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" loading="{{savingAvatar}}" disabled="{{savingAvatar}}">
+    <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" loading="{{savingAvatar}}" disabled="{{savingAvatar}}">
       <image wx:if="{{avatarDraft}}" class="avatar-img" src="{{avatarDraft}}" mode="aspectFill" binderror="onAvatarError"></image>
       <view wx:else class="avatar-empty">点击设置头像</view>
     </button>

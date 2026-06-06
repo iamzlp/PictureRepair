@@ -13,6 +13,17 @@ Page({
     savingNickname: false
   },
 
+  applyUserState(user) {
+    const mergedUser = Object.assign({}, this.data.user || {}, user || {})
+    this.setData({
+      user: mergedUser,
+      balance: mergedUser && typeof mergedUser.mileage_balance === 'number' ? mergedUser.mileage_balance : (mergedUser && mergedUser.mileage_balance ? mergedUser.mileage_balance : 0),
+      avatarLoadErrorShown: false,
+      avatarDraft: mergedUser && mergedUser.avatar_url ? mergedUser.avatar_url : '',
+      nicknameDraft: mergedUser && mergedUser.nickname ? mergedUser.nickname : '游客'
+    })
+  },
+
   async onShow() {
     const tabbar = this.getTabBar && this.getTabBar()
     if (tabbar && tabbar.setData) {
@@ -36,14 +47,8 @@ Page({
       const user = await auth.loadUser()
       const tasks = await api.listTasks({ skip: 0, limit: 100 })
       const repairedCount = (tasks || []).filter((t) => t.status === 'completed').length
-      this.setData({
-        user,
-        repairedCount,
-        balance: user && typeof user.mileage_balance === 'number' ? user.mileage_balance : (user && user.mileage_balance ? user.mileage_balance : 0),
-        avatarLoadErrorShown: false,
-        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
-        nicknameDraft: user && user.nickname ? user.nickname : '游客'
-      })
+      this.setData({ repairedCount })
+      this.applyUserState(user)
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' })
     }
@@ -101,12 +106,7 @@ Page({
       const user = await auth.updateUserProfile({
         nickname
       })
-      this.setData({
-        user,
-        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
-        nicknameDraft: user && user.nickname ? user.nickname : '',
-        avatarLoadErrorShown: false
-      })
+      this.applyUserState(user)
       wx.showToast({ title: '昵称已更新', icon: 'success' })
     } catch (error) {
       this.setData({ nicknameDraft: currentDisplayNickname })
@@ -122,12 +122,7 @@ Page({
     this.setData({ savingAvatar: true })
     try {
       const user = await auth.updateUserProfile({ avatarUrl })
-      this.setData({
-        user,
-        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
-        nicknameDraft: user && user.nickname ? user.nickname : '游客',
-        avatarLoadErrorShown: false
-      })
+      this.applyUserState(user)
       wx.showToast({ title: '头像已更新', icon: 'success' })
     } catch (error) {
       this.setData({

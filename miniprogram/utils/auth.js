@@ -63,10 +63,10 @@ function getWechatCode() {
 function buildProfilePayload(profile) {
   if (!profile || typeof profile !== 'object') return {}
   const payload = {}
-  if (profile.nickname) {
+  if (Object.prototype.hasOwnProperty.call(profile, 'nickname')) {
     payload.nickname = String(profile.nickname).trim()
   }
-  if (profile.avatarUrl) {
+  if (Object.prototype.hasOwnProperty.call(profile, 'avatarUrl')) {
     payload.avatarUrl = String(profile.avatarUrl).trim()
   }
   return payload
@@ -86,26 +86,37 @@ function normalizeAvatarUploadError(error) {
 async function prepareWechatProfile(profile) {
   const payload = buildProfilePayload(profile)
   if (!payload.nickname && !payload.avatarUrl) {
-    return {}
+    const hasNickname = Object.prototype.hasOwnProperty.call(payload, 'nickname')
+    const hasAvatar = Object.prototype.hasOwnProperty.call(payload, 'avatarUrl')
+    if (!hasNickname && !hasAvatar) {
+      return {}
+    }
   }
 
-  let avatarUrl = payload.avatarUrl || ''
-  if (avatarUrl && isLocalFilePath(avatarUrl)) {
-    const uploadResult = await api.uploadPhoto(avatarUrl, 'avatar').catch((error) => {
-      throw new Error(normalizeAvatarUploadError(error))
-    })
+  const result = {}
 
-    if (!uploadResult || !uploadResult.url) {
-      throw new Error('微信头像上传失败：后端未返回头像地址')
+  if (Object.prototype.hasOwnProperty.call(payload, 'avatarUrl')) {
+    let avatarUrl = payload.avatarUrl || ''
+    if (avatarUrl && isLocalFilePath(avatarUrl)) {
+      const uploadResult = await api.uploadPhoto(avatarUrl, 'avatar').catch((error) => {
+        throw new Error(normalizeAvatarUploadError(error))
+      })
+
+      if (!uploadResult || !uploadResult.url) {
+        throw new Error('微信头像上传失败：后端未返回头像地址')
+      }
+
+      avatarUrl = uploadResult.url
     }
 
-    avatarUrl = uploadResult.url
+    result.avatar_url = avatarUrl || ''
   }
 
-  return {
-    nickname: payload.nickname || '',
-    avatar_url: avatarUrl || ''
+  if (Object.prototype.hasOwnProperty.call(payload, 'nickname')) {
+    result.nickname = payload.nickname || ''
   }
+
+  return result
 }
 
 async function loginWithWechat() {
@@ -140,10 +151,14 @@ async function loginWithWechatPhone(phoneCode, profile) {
 
 async function updateUserProfile(profile) {
   const profilePayload = await prepareWechatProfile(profile)
-  const user = await api.updateMe({
-    nickname: Object.prototype.hasOwnProperty.call(profilePayload, 'nickname') ? (profilePayload.nickname || '') : undefined,
-    avatar_url: Object.prototype.hasOwnProperty.call(profilePayload, 'avatar_url') ? (profilePayload.avatar_url || '') : undefined
-  })
+  const requestPayload = {}
+  if (Object.prototype.hasOwnProperty.call(profilePayload, 'nickname')) {
+    requestPayload.nickname = profilePayload.nickname || ''
+  }
+  if (Object.prototype.hasOwnProperty.call(profilePayload, 'avatar_url')) {
+    requestPayload.avatar_url = profilePayload.avatar_url || ''
+  }
+  const user = await api.updateMe(requestPayload)
   const app = getApp()
   app.globalData.user = user
   wx.setStorageSync(USER_PROFILE_KEY, user || null)

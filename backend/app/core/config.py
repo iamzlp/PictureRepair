@@ -56,8 +56,14 @@ class Settings(BaseSettings):
     # Doubao/Seedream API (via Ark SDK)
     ARK_API_KEY: Optional[str] = None
 
-    # Image Model: 'jimeng' (即梦4.0) or 'doubao' (豆包/Seedream 5.0)
-    IMAGE_MODEL: str = "doubao"
+    # Agnes Image API
+    AGNES_API_KEY: Optional[str] = None
+    AGNES_API_BASE_URL: str = "https://apihub.agnes-ai.com/v1"
+
+    # Image Model: 'jimeng' (即梦4.0) / 'doubao' (豆包/Seedream 5.0) / 'agnes' (Agnes Image 2.1 Flash)
+    IMAGE_MODEL: str = "agnes"
+    IMAGE_MODEL_FALLBACK: Optional[str] = "doubao"
+    IMAGE_MODEL_AUTO_FALLBACK: bool = True
     MOCK_IMAGE_GENERATION: bool = False
 
     # WeChat Mini Program

@@ -17,11 +17,66 @@ class VolcAdapter:
         self.model_type = getattr(settings, 'IMAGE_MODEL', 'doubao')
 
     def generate_image(self, prompt: str, style: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> bytes:
-        print(f"[Image Generation] Using model: {self.model_type.upper()} (IMAGE_MODEL={settings.IMAGE_MODEL})")
-        if self.model_type == 'doubao':
+        primary_model = str(settings.IMAGE_MODEL or self.model_type or "agnes").strip().lower()
+        fallback_model = str(settings.IMAGE_MODEL_FALLBACK or "").strip().lower()
+        auto_fallback = bool(settings.IMAGE_MODEL_AUTO_FALLBACK)
+
+        print(
+            f"[Image Generation] primary={primary_model}, "
+            f"fallback={fallback_model or 'none'}, auto_fallback={auto_fallback}"
+        )
+
+        attempted_errors: list[str] = []
+        models_to_try = [primary_model]
+        if auto_fallback and fallback_model and fallback_model != primary_model:
+            models_to_try.append(fallback_model)
+
+        for index, model_name in enumerate(models_to_try):
+            try:
+                return self._generate_with_model(
+                    model_name=model_name,
+                    prompt=prompt,
+                    style=style,
+                    aspect_ratio=aspect_ratio,
+                    reference_image_urls=reference_image_urls,
+                )
+            except Exception as error:
+                error_message = f"{model_name}: {error}"
+                attempted_errors.append(error_message)
+                is_last_attempt = index == len(models_to_try) - 1
+                if is_last_attempt:
+                    raise Exception(
+                        " | ".join(attempted_errors)
+                    ) from error
+                print(f"[Image Generation] {model_name} failed, fallback to {models_to_try[index + 1]}: {error}")
+
+        raise Exception("No image model was executed")
+
+    def _generate_with_model(
+        self,
+        model_name: str,
+        prompt: str,
+        style: str,
+        aspect_ratio: str,
+        reference_image_urls: list[str] = None,
+    ) -> bytes:
+        if model_name == 'doubao':
             return self._generate_doubao(prompt, aspect_ratio, reference_image_urls)
-        else:
+        if model_name == 'agnes':
+            return self._generate_agnes(prompt, style, aspect_ratio, reference_image_urls)
+        if model_name == 'jimeng':
             return self._generate_jimeng(prompt, style, aspect_ratio, reference_image_urls)
+        raise Exception(f"Unsupported IMAGE_MODEL: {model_name}")
+
+    def _size_from_aspect_ratio(self, aspect_ratio: str) -> str:
+        size_map = {
+            "1:1": "1024x1024",
+            "3:4": "768x1024",
+            "4:3": "1024x768",
+            "16:9": "1280x720",
+            "9:16": "720x1280",
+        }
+        return size_map.get(aspect_ratio, "1024x1024")
 
     def _generate_doubao(self, prompt: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> bytes:
         from volcenginesdkarkruntime import Ark
@@ -67,6 +122,53 @@ class VolcAdapter:
 
         return self._download_image(response.data[0].url)
 
+    def _generate_agnes(self, prompt: str, style: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> bytes:
+        if not settings.AGNES_API_KEY:
+            raise Exception("AGNES_API_KEY not configured")
+
+        normalized_style = style.value if hasattr(style, "value") else str(style or "").strip()
+        full_prompt = prompt
+        if normalized_style and normalized_style.lower() not in prompt.lower():
+            full_prompt = f"{normalized_style} style, {prompt}"
+
+        payload = {
+            "model": "agnes-image-2.1-flash",
+            "prompt": full_prompt,
+            "size": self._size_from_aspect_ratio(aspect_ratio),
+        }
+
+        normalized_urls = []
+        if reference_image_urls:
+            normalized_urls = [self._normalize_url(url) for url in reference_image_urls[:4] if url]
+        if normalized_urls:
+            payload["extra_body"] = {
+                "image": normalized_urls,
+                "response_format": "url",
+            }
+
+        endpoint = f"{settings.AGNES_API_BASE_URL.rstrip('/')}/images/generations"
+        headers = {
+            "Authorization": f"Bearer {settings.AGNES_API_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        print(f"[Agnes Request] endpoint={endpoint}, size={payload['size']}, reference_urls={normalized_urls}")
+        resp = requests.post(endpoint, headers=headers, json=payload, timeout=120)
+        if resp.status_code < 200 or resp.status_code >= 300:
+            raise Exception(f"Agnes request failed: {resp.status_code} {resp.text}")
+
+        try:
+            resp_json = resp.json()
+        except Exception as error:
+            raise Exception(f"Invalid Agnes response: {error}") from error
+
+        image_url = self._extract_agnes_image_url(resp_json)
+        if not image_url:
+            raise Exception(f"No image URL in Agnes response: {resp_json}")
+
+        print(f"[Agnes Response] {image_url}")
+        return self._download_image(image_url)
+
     def _generate_jimeng(self, prompt: str, style: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> bytes:
         task_id = self._submit_task_jimeng(prompt, style, aspect_ratio, reference_image_urls)
         if not task_id:
@@ -108,10 +210,51 @@ class VolcAdapter:
         return url
 
     def _download_image(self, url: str) -> bytes:
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=120)
         if resp.status_code == 200:
             return resp.content
         raise Exception(f"Failed to download image from {url}")
+
+    def _extract_agnes_image_url(self, payload: dict) -> str | None:
+        if not isinstance(payload, dict):
+            return None
+
+        candidates = []
+        data = payload.get("data")
+        if isinstance(data, list):
+            candidates.extend(data)
+        elif isinstance(data, dict):
+            candidates.append(data)
+
+        output = payload.get("output")
+        if isinstance(output, list):
+            candidates.extend(output)
+        elif isinstance(output, dict):
+            candidates.append(output)
+
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            for key in ("url", "image_url"):
+                value = item.get(key)
+                if isinstance(value, str) and value.startswith("http"):
+                    return value
+            images = item.get("images")
+            if isinstance(images, list):
+                for image in images:
+                    if isinstance(image, str) and image.startswith("http"):
+                        return image
+                    if isinstance(image, dict):
+                        value = image.get("url") or image.get("image_url")
+                        if isinstance(value, str) and value.startswith("http"):
+                            return value
+
+        for key in ("url", "image_url"):
+            value = payload.get(key)
+            if isinstance(value, str) and value.startswith("http"):
+                return value
+
+        return None
 
     def _submit_task_jimeng(self, prompt: str, style: str, aspect_ratio: str, reference_image_urls: list[str] = None) -> str:
         action = "CVSync2AsyncSubmitTask"
