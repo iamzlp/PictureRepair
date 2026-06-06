@@ -3,6 +3,8 @@ import io
 import json
 from typing import Any
 
+from PIL import Image
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -14,7 +16,7 @@ from app.db.session import async_session_factory, get_db
 from app.models.billing import CreditTransaction
 from app.models.task import GenerationTask
 from app.models.user import User
-from app.schemas import ArtStyle, ExportResponse, RepairMode, RepairTaskCreate, RepairTaskResponse, TaskStatus
+from app.schemas import ArtStyle, AspectRatio, ExportResponse, RepairMode, RepairTaskCreate, RepairTaskResponse, TaskStatus
 from app.services.agnes_video_adapter import agnes_video_adapter
 from app.services.storage import storage_manager
 
@@ -97,6 +99,31 @@ def normalize_video_status(value: str | None) -> str:
 
 def build_default_video_prompt() -> str:
     return settings.AGNES_VIDEO_DEFAULT_PROMPT.strip()
+
+
+def choose_repair_aspect_ratio(image_key: str | None, fallback: AspectRatio) -> AspectRatio:
+    if not image_key:
+        return fallback
+    try:
+        image_bytes = storage_manager.download_file(image_key)
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            width, height = image.size
+        ratio = width / height if height else 1
+        ratio_map = {
+            AspectRatio.SQUARE: 1.0,
+            AspectRatio.PORTRAIT: 3 / 4,
+            AspectRatio.LANDSCAPE: 16 / 9,
+            AspectRatio.STORY: 9 / 16,
+        }
+        selected = min(ratio_map.items(), key=lambda item: abs(item[1] - ratio))[0]
+        print(
+            "[Repair Aspect Ratio] "
+            f"image_key={image_key}, width={width}, height={height}, selected={selected}"
+        )
+        return selected
+    except Exception as error:
+        print(f"[Repair Aspect Ratio] failed to inspect source image: {error}")
+        return fallback
 
 
 async def refund_video_credits_if_needed(db: AsyncSession, task: GenerationTask, user: User) -> None:
@@ -233,11 +260,13 @@ def build_repair_prompt(mode: RepairMode, extra_prompt: str | None = None) -> st
             "如果是翻拍照片，修复照片方向，去除轮廓外的其他元素，仅剩照片主体，以自然、符合历史且逼真的方式为这张老黑白照片上色，然后把这张老照片做高清修复，去除画面里的划痕、折痕、污点和明显噪点，尽量还原人物面部的清晰细节。"
             "请保留原照片的年代感和真实质感，不要把人物修成现代美颜风，不要过度磨皮，整体画面要自然、柔和、干净。"
             "把人物皮肤和整体色调处理得更自然一点，保留老照片的年代感，不要改变人物原本五官。重点优化人物面部清晰度，增强眼睛、鼻子、嘴巴和头发边缘的细节，但不要改变人物长相。"
+            "严格保持原图的完整构图、边缘范围和人物数量，不要裁切画面，不要放大取景，不要改变照片比例。"
         ),
         RepairMode.ENHANCE: (
             "如果是翻拍照片，修复照片方向，去除轮廓外的其他元素，仅剩照片主体，帮我把这张老照片做高清修复，去除画面里的划痕、折痕、污点和明显噪点，尽量还原人物面部的清晰细节。"
             "请保留原照片的年代感和真实质感，不要把人物修成现代美颜风，不要过度磨皮，整体画面要自然、柔和、干净。"
             "把人物皮肤和整体色调处理得更自然一点，保留老照片的年代感，不要改变人物原本五官。重点优化人物面部清晰度，增强眼睛、鼻子、嘴巴和头发边缘的细节，但不要改变人物长相。"
+            "严格保持原图的完整构图、边缘范围和人物数量，不要裁切画面，不要放大取景，不要改变照片比例。"
         ),
     }
     prompt = prompts[mode]
@@ -258,17 +287,20 @@ async def create_repair_task(
 
     normalized_image_url = storage_manager.normalize_file_reference(request.image_url.strip())
     prompt = build_repair_prompt(request.mode, request.extra_prompt)
+    resolved_aspect_ratio = choose_repair_aspect_ratio(normalized_image_url, request.aspect_ratio)
     task = GenerationTask(
         user_id=current_user.id,
         prompt=prompt,
         task_type=f"old_photo_{request.mode.value}",
         style=ArtStyle.REALISTIC,
-        aspect_ratio=request.aspect_ratio,
+        aspect_ratio=resolved_aspect_ratio,
         reference_image_url=normalized_image_url,
         prompt_trace=json.dumps(
             {
                 "repair_mode": request.mode.value,
                 "reference_image_urls": [normalized_image_url],
+                "requested_aspect_ratio": request.aspect_ratio,
+                "resolved_aspect_ratio": resolved_aspect_ratio,
             },
             ensure_ascii=False,
         ),

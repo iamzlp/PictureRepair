@@ -11,11 +11,28 @@ const STATUS_TEXT = {
   failed: '处理失败'
 }
 
+function inferAspectRatio(width, height) {
+  const safeWidth = Number(width || 0)
+  const safeHeight = Number(height || 0)
+  if (!safeWidth || !safeHeight) return '3:4'
+  const ratio = safeWidth / safeHeight
+  const candidates = {
+    '1:1': 1,
+    '3:4': 3 / 4,
+    '16:9': 16 / 9,
+    '9:16': 9 / 16
+  }
+  return Object.keys(candidates).sort((a, b) => {
+    return Math.abs(candidates[a] - ratio) - Math.abs(candidates[b] - ratio)
+  })[0] || '3:4'
+}
+
 Page({
   data: {
     user: null,
     localImage: '',
     photoUrl: '',
+    imageAspectRatio: '3:4',
     mode: 'enhance',
     extraPrompt: '',
     taskId: '',
@@ -90,10 +107,16 @@ Page({
 
     try {
       const filePath = await this.chooseImage(sourceType)
+      let aspectRatio = '3:4'
+      try {
+        const imageInfo = await this.getLocalImageInfo(filePath)
+        aspectRatio = inferAspectRatio(imageInfo.width, imageInfo.height)
+      } catch (error) {}
       this.stopPolling()
       this.setData({
         localImage: filePath,
         photoUrl: '',
+        imageAspectRatio: aspectRatio,
         resultUrl: '',
         taskId: '',
         progress: 0,
@@ -140,6 +163,16 @@ Page({
     })
   },
 
+  getLocalImageInfo(filePath) {
+    return new Promise((resolve, reject) => {
+      wx.getImageInfo({
+        src: filePath,
+        success: resolve,
+        fail: reject
+      })
+    })
+  },
+
   async onCreateRepair() {
     if (!this.data.canCreate || this.data.creating || this.data.polling) return
     if (!(await this.requireLogin())) return
@@ -154,10 +187,18 @@ Page({
     })
 
     try {
+      let aspectRatio = this.data.imageAspectRatio || '3:4'
+      if (this.data.localImage) {
+        try {
+          const imageInfo = await this.getLocalImageInfo(this.data.localImage)
+          aspectRatio = inferAspectRatio(imageInfo.width, imageInfo.height)
+          this.setData({ imageAspectRatio: aspectRatio })
+        } catch (error) {}
+      }
       const task = await api.createRepairTask({
         image_url: this.data.photoUrl,
         mode: this.data.mode,
-        aspect_ratio: '3:4',
+        aspect_ratio: aspectRatio,
         extra_prompt: this.data.extraPrompt || undefined
       })
       this.setData({
