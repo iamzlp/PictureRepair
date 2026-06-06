@@ -9,7 +9,8 @@ Page({
     avatarLoadErrorShown: false,
     avatarDraft: '',
     nicknameDraft: '',
-    savingProfile: false
+    savingAvatar: false,
+    savingNickname: false
   },
 
   async onShow() {
@@ -41,7 +42,7 @@ Page({
         balance: user && typeof user.mileage_balance === 'number' ? user.mileage_balance : (user && user.mileage_balance ? user.mileage_balance : 0),
         avatarLoadErrorShown: false,
         avatarDraft: user && user.avatar_url ? user.avatar_url : '',
-        nicknameDraft: user && user.nickname ? user.nickname : ''
+        nicknameDraft: user && user.nickname ? user.nickname : '游客'
       })
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' })
@@ -67,7 +68,9 @@ Page({
   onChooseAvatar(event) {
     const avatarUrl = event && event.detail ? (event.detail.avatarUrl || '') : ''
     if (!avatarUrl) return
-    this.setData({ avatarDraft: avatarUrl })
+    this.setData({ avatarDraft: avatarUrl }, () => {
+      this.saveAvatarProfile(avatarUrl)
+    })
   },
 
   onNicknameInput(event) {
@@ -75,21 +78,28 @@ Page({
     this.setData({ nicknameDraft })
   },
 
-  async onSaveProfile() {
-    if (this.data.savingProfile) return
+  async onNicknameBlur(event) {
+    if (this.data.savingNickname) return
 
-    const nickname = this.data.nicknameDraft ? String(this.data.nicknameDraft).trim() : ''
-    const avatarUrl = this.data.avatarDraft || ''
-    if (!nickname && !avatarUrl) {
-      wx.showToast({ title: '请先设置头像或昵称', icon: 'none' })
+    const rawNickname = event && event.detail ? (event.detail.value || '') : this.data.nicknameDraft
+    const nickname = rawNickname ? String(rawNickname).trim() : ''
+    const currentNickname = this.data.user && this.data.user.nickname ? String(this.data.user.nickname).trim() : ''
+    const currentDisplayNickname = currentNickname || '游客'
+
+    if (!nickname) {
+      this.setData({ nicknameDraft: currentDisplayNickname })
       return
     }
 
-    this.setData({ savingProfile: true })
+    if (nickname === currentDisplayNickname) {
+      this.setData({ nicknameDraft: nickname })
+      return
+    }
+
+    this.setData({ savingNickname: true, nicknameDraft: nickname })
     try {
       const user = await auth.updateUserProfile({
-        nickname,
-        avatarUrl
+        nickname
       })
       this.setData({
         user,
@@ -97,11 +107,35 @@ Page({
         nicknameDraft: user && user.nickname ? user.nickname : '',
         avatarLoadErrorShown: false
       })
-      wx.showToast({ title: '资料已更新', icon: 'success' })
+      wx.showToast({ title: '昵称已更新', icon: 'success' })
     } catch (error) {
-      wx.showToast({ title: error.message || '更新失败', icon: 'none' })
+      this.setData({ nicknameDraft: currentDisplayNickname })
+      wx.showToast({ title: error.message || '昵称更新失败', icon: 'none' })
     } finally {
-      this.setData({ savingProfile: false })
+      this.setData({ savingNickname: false })
+    }
+  },
+
+  async saveAvatarProfile(avatarUrl) {
+    if (!avatarUrl || this.data.savingAvatar) return
+
+    this.setData({ savingAvatar: true })
+    try {
+      const user = await auth.updateUserProfile({ avatarUrl })
+      this.setData({
+        user,
+        avatarDraft: user && user.avatar_url ? user.avatar_url : '',
+        nicknameDraft: user && user.nickname ? user.nickname : '游客',
+        avatarLoadErrorShown: false
+      })
+      wx.showToast({ title: '头像已更新', icon: 'success' })
+    } catch (error) {
+      this.setData({
+        avatarDraft: this.data.user && this.data.user.avatar_url ? this.data.user.avatar_url : ''
+      })
+      wx.showToast({ title: error.message || '头像更新失败', icon: 'none' })
+    } finally {
+      this.setData({ savingAvatar: false })
     }
   },
 

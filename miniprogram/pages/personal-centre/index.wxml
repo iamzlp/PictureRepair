@@ -2,26 +2,21 @@
   <view class="title">个人中心</view>
 
   <view class="card profile">
-    <button class="avatar avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+    <button class="avatar avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" loading="{{savingAvatar}}" disabled="{{savingAvatar}}">
       <image wx:if="{{avatarDraft}}" class="avatar-img" src="{{avatarDraft}}" mode="aspectFill" binderror="onAvatarError"></image>
       <view wx:else class="avatar-empty">点击设置头像</view>
     </button>
     <view class="profile-body">
-      <view class="name">{{user ? (user.nickname || '微信用户') : '未登录'}}</view>
+      <input
+        class="name-input"
+        type="nickname"
+        value="{{nicknameDraft}}"
+        placeholder="游客"
+        bindinput="onNicknameInput"
+        bindblur="onNicknameBlur"
+      />
       <view class="badge">☆ 免费会员</view>
     </view>
-  </view>
-
-  <view class="card profile-editor">
-    <view class="editor-title">资料设置</view>
-    <input
-      class="nickname-input"
-      type="nickname"
-      placeholder="请输入微信昵称"
-      value="{{nicknameDraft}}"
-      bindinput="onNicknameInput"
-    />
-    <button class="save-profile-btn" bindtap="onSaveProfile" loading="{{savingProfile}}" disabled="{{savingProfile}}">保存头像昵称</button>
   </view>
 
   <view class="stats">
