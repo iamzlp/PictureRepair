@@ -21,6 +21,49 @@ from app.services.storage import storage_manager
 router = APIRouter()
 
 
+def summarize_video_payload(payload: Any, limit: int = 2500) -> str:
+    try:
+        text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    except Exception:
+        text = str(payload)
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}...(truncated {len(text) - limit} chars)"
+
+
+def collect_video_url_candidates(payload: Any) -> list[str]:
+    candidates: list[str] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                key_text = str(key).lower()
+                if "video" in key_text or key_text in {"url", "uri", "file"}:
+                    if isinstance(item, str) and item.startswith("http"):
+                        candidates.append(item)
+                    elif isinstance(item, list):
+                        for sub_item in item:
+                            if isinstance(sub_item, str) and sub_item.startswith("http"):
+                                candidates.append(sub_item)
+                            elif isinstance(sub_item, dict):
+                                visit(sub_item)
+                    elif isinstance(item, dict):
+                        visit(item)
+                elif isinstance(item, (dict, list)):
+                    visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, (dict, list)):
+                    visit(item)
+
+    visit(payload)
+    unique: list[str] = []
+    for item in candidates:
+        if item not in unique:
+            unique.append(item)
+    return unique[:10]
+
+
 def serialize_repair_task(task: GenerationTask, mode: RepairMode | None = None) -> RepairTaskResponse:
     return RepairTaskResponse(
         task_id=task.id,
@@ -100,15 +143,33 @@ async def process_repair_video_task(task_id: str) -> None:
         user = user_result.scalars().first()
 
         try:
-            for _ in range(120):
+            print(
+                "[Repair Video Worker Start] "
+                f"task_id={task.id}, user_id={task.user_id}, external_task_id={task.video_external_task_id}, "
+                f"existing_status={task.video_status}, result_url={task.result_url}"
+            )
+            for index in range(120):
                 payload = await asyncio.to_thread(agnes_video_adapter.get_video_task, task.video_external_task_id)
                 video_status = normalize_video_status(payload.get("status"))
                 task.video_status = video_status
                 task.video_progress = int(payload.get("progress") or 0)
+                candidate_urls = collect_video_url_candidates(payload)
+                print(
+                    "[Repair Video Worker Poll] "
+                    f"task_id={task.id}, external_task_id={task.video_external_task_id}, poll_index={index + 1}, "
+                    f"raw_status={payload.get('status')}, normalized_status={video_status}, "
+                    f"progress={task.video_progress}, candidate_urls={candidate_urls}, "
+                    f"payload={summarize_video_payload(payload)}"
+                )
 
                 if video_status == "completed":
                     video_url = str(payload.get("video_url") or "").strip()
                     if not video_url:
+                        print(
+                            "[Repair Video Worker Missing URL] "
+                            f"task_id={task.id}, external_task_id={task.video_external_task_id}, "
+                            f"candidate_urls={candidate_urls}, payload={summarize_video_payload(payload)}"
+                        )
                         raise Exception("Agnes video completed without video_url")
 
                     video_data, content_type = await asyncio.to_thread(agnes_video_adapter.download_video, video_url)
@@ -119,6 +180,11 @@ async def process_repair_video_task(task_id: str) -> None:
                         content_type or "video/mp4",
                         "videos",
                     )
+                    print(
+                        "[Repair Video Worker Upload Success] "
+                        f"task_id={task.id}, external_task_id={task.video_external_task_id}, "
+                        f"content_type={content_type}, video_ref={video_ref}"
+                    )
                     task.result_video_url = video_ref
                     task.video_progress = 100
                     task.video_error_message = None
@@ -127,6 +193,11 @@ async def process_repair_video_task(task_id: str) -> None:
 
                 if video_status == "failed":
                     task.video_error_message = str(payload.get("error") or payload.get("message") or "视频生成失败")
+                    print(
+                        "[Repair Video Worker Failed] "
+                        f"task_id={task.id}, external_task_id={task.video_external_task_id}, "
+                        f"error_message={task.video_error_message}, payload={summarize_video_payload(payload)}"
+                    )
                     if user:
                         await refund_video_credits_if_needed(db, task, user)
                     await db.commit()
@@ -137,12 +208,20 @@ async def process_repair_video_task(task_id: str) -> None:
 
             task.video_status = "failed"
             task.video_error_message = "视频生成超时"
+            print(
+                "[Repair Video Worker Timeout] "
+                f"task_id={task.id}, external_task_id={task.video_external_task_id}"
+            )
             if user:
                 await refund_video_credits_if_needed(db, task, user)
             await db.commit()
         except Exception as error:
             task.video_status = "failed"
             task.video_error_message = str(error)
+            print(
+                "[Repair Video Worker Exception] "
+                f"task_id={task.id}, external_task_id={task.video_external_task_id}, error={error}"
+            )
             if user:
                 await refund_video_credits_if_needed(db, task, user)
             await db.commit()
@@ -328,10 +407,19 @@ async def create_repair_video(
     if not source_image_url:
         raise HTTPException(status_code=409, detail="修复图片地址无效，无法生成视频")
 
+    print(
+        "[Repair Video Create Start] "
+        f"task_id={task.id}, user_id={current_user.id}, source_image_url={source_image_url}, "
+        f"prompt={prompt}"
+    )
     create_payload = await asyncio.to_thread(
         agnes_video_adapter.create_video_task,
         prompt,
         source_image_url,
+    )
+    print(
+        "[Repair Video Create Payload] "
+        f"task_id={task.id}, payload={summarize_video_payload(create_payload)}"
     )
 
     external_task_id = str(create_payload.get("id") or "").strip()
@@ -359,6 +447,13 @@ async def create_repair_video(
     await db.commit()
     await db.refresh(current_user)
     await db.refresh(task)
+
+    print(
+        "[Repair Video Create Success] "
+        f"task_id={task.id}, external_task_id={external_task_id}, "
+        f"video_status={task.video_status}, video_progress={task.video_progress}, "
+        f"balance_after={current_user.mileage_balance}"
+    )
 
     background_tasks.add_task(process_repair_video_task, str(task.id))
     return serialize_repair_task(task)
