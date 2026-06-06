@@ -121,7 +121,12 @@ def normalize_video_status(value: str | None) -> str:
 
 
 def build_default_video_prompt() -> str:
-    return settings.AGNES_VIDEO_DEFAULT_PROMPT.strip()
+    base_prompt = settings.AGNES_VIDEO_DEFAULT_PROMPT.strip()
+    return (
+        f"{base_prompt} "
+        "Preserve the full original frame and aspect ratio of the repaired photo. "
+        "Do not crop, zoom, reframe, or change the composition boundaries."
+    ).strip()
 
 
 def choose_repair_aspect_ratio(image_key: str | None, fallback: AspectRatio) -> AspectRatio:
@@ -147,6 +152,34 @@ def choose_repair_aspect_ratio(image_key: str | None, fallback: AspectRatio) -> 
     except Exception as error:
         print(f"[Repair Aspect Ratio] failed to inspect source image: {error}")
         return fallback
+
+
+def choose_video_dimensions(image_key: str | None) -> tuple[int, int] | None:
+    if not image_key:
+        return None
+    try:
+        image_bytes = storage_manager.download_file(image_key)
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            source_width, source_height = image.size
+        if not source_width or not source_height:
+            return None
+
+        long_edge = 1152
+        if source_width >= source_height:
+            scale = long_edge / float(source_width)
+        else:
+            scale = long_edge / float(source_height)
+
+        width = max(256, int(round((source_width * scale) / 16) * 16))
+        height = max(256, int(round((source_height * scale) / 16) * 16))
+        print(
+            "[Repair Video Dimensions] "
+            f"image_key={image_key}, source_size={source_width}x{source_height}, target_size={width}x{height}"
+        )
+        return width, height
+    except Exception as error:
+        print(f"[Repair Video Dimensions] failed to inspect repaired image: {error}")
+        return None
 
 
 async def refund_video_credits_if_needed(db: AsyncSession, task: GenerationTask, user: User) -> None:
@@ -451,8 +484,6 @@ async def create_repair_video(
 
     if task.video_status in {"submitted", "processing"}:
         return serialize_repair_task(task)
-    if task.video_status == "completed" and task.result_video_url:
-        return serialize_repair_task(task)
 
     if (current_user.mileage_balance or 0) < settings.VIDEO_GENERATION_CREDIT_COST:
         raise HTTPException(status_code=402, detail="Insufficient video credits")
@@ -461,16 +492,21 @@ async def create_repair_video(
     source_image_url = storage_manager.resolve_public_url(task.result_url, expires=1800)
     if not source_image_url:
         raise HTTPException(status_code=409, detail="修复图片地址无效，无法生成视频")
+    target_dimensions = choose_video_dimensions(task.result_url)
+    video_width = target_dimensions[0] if target_dimensions else None
+    video_height = target_dimensions[1] if target_dimensions else None
 
     print(
         "[Repair Video Create Start] "
         f"task_id={task.id}, user_id={current_user.id}, source_image_url={source_image_url}, "
-        f"prompt={prompt}"
+        f"prompt={prompt}, width={video_width}, height={video_height}"
     )
     create_payload = await asyncio.to_thread(
         agnes_video_adapter.create_video_task,
         prompt,
         source_image_url,
+        video_width,
+        video_height,
     )
     print(
         "[Repair Video Create Payload] "

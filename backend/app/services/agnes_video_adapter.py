@@ -31,7 +31,7 @@ class AgnesVideoAdapter:
             text = str(payload)
         return self._truncate(text, limit)
 
-    def create_video_task(self, prompt: str, image_url: str) -> dict:
+    def create_video_task(self, prompt: str, image_url: str, width: int | None = None, height: int | None = None) -> dict:
         payload = {
             "model": "agnes-video-v2.0",
             "prompt": prompt,
@@ -40,6 +40,10 @@ class AgnesVideoAdapter:
             "frame_rate": 24,
             "negative_prompt": settings.AGNES_VIDEO_NEGATIVE_PROMPT,
         }
+        if isinstance(width, int) and width > 0:
+            payload["width"] = width
+        if isinstance(height, int) and height > 0:
+            payload["height"] = height
         print(
             "[Agnes Video Create Request] "
             f"endpoint={self.base_url}/videos, "

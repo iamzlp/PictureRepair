@@ -164,6 +164,7 @@ Page({
       auth.navigateToLogin({ back: 1 })
       return
     }
+    const isRegenerate = this.data.videoStatus === 'completed'
     this.setData({ generatingVideo: true })
     try {
       const task = await api.createRepairVideo(this.data.taskId)
@@ -174,7 +175,7 @@ Page({
         videoErrorMessage: task.video_error_message || ''
       })
       this.updateVideoPolling(task.video_status)
-      wx.showToast({ title: '视频任务已提交', icon: 'success' })
+      wx.showToast({ title: isRegenerate ? '重新生成任务已提交' : '视频任务已提交', icon: 'success' })
     } catch (error) {
       if (String(error.message).includes('Insufficient')) {
         wx.navigateTo({ url: `/pages/personal-centre/recharge?from=video&source=view-photos&taskId=${encodeURIComponent(this.data.taskId)}` })
