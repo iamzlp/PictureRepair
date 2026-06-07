@@ -6,6 +6,7 @@ from functools import lru_cache
 from typing import Any
 
 import requests
+from cryptography.exceptions import InvalidSignature
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -29,6 +30,23 @@ def load_merchant_private_key():
         raise WechatPayError("WECHAT_PAY_PRIVATE_KEY_PATH is not configured")
     with open(path, "rb") as fp:
         return serialization.load_pem_private_key(fp.read(), password=None)
+
+
+@lru_cache(maxsize=1)
+def load_wechat_pay_public_key():
+    path = settings.WECHAT_PAY_PUBLIC_KEY_PATH
+    if not path:
+        raise WechatPayError("WECHAT_PAY_PUBLIC_KEY_PATH is not configured")
+    with open(path, "rb") as fp:
+        key_bytes = fp.read()
+    try:
+        return serialization.load_pem_public_key(key_bytes)
+    except ValueError:
+        try:
+            cert = x509.load_pem_x509_certificate(key_bytes)
+            return cert.public_key()
+        except ValueError as exc:
+            raise WechatPayError("Invalid WeChat Pay public key file") from exc
 
 
 class WechatPayService:
@@ -233,6 +251,14 @@ class WechatPayService:
         self._platform_cert_cache_expires_at = now + 6 * 60 * 60
         return certs
 
+    def _verify_signature_with_public_key(self, public_key: Any, *, signature: str, message: bytes) -> None:
+        public_key.verify(
+            base64.b64decode(signature),
+            message,
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+
     def verify_notification(self, headers: dict[str, str], body: str) -> None:
         serial_no = str(headers.get("Wechatpay-Serial") or headers.get("wechatpay-serial") or "").strip()
         signature = str(headers.get("Wechatpay-Signature") or headers.get("wechatpay-signature") or "").strip()
@@ -242,18 +268,55 @@ class WechatPayService:
         if not serial_no or not signature or not timestamp or not nonce:
             raise WechatPayError("WeChat Pay notify headers missing")
 
-        public_keys = self._load_platform_certificates()
-        public_key = public_keys.get(serial_no)
-        if public_key is None:
-            raise WechatPayError(f"WeChat Pay platform certificate not found for serial {serial_no}")
-
         message = f"{timestamp}\n{nonce}\n{body}\n".encode("utf-8")
-        public_key.verify(
-            base64.b64decode(signature),
-            message,
-            padding.PKCS1v15(),
-            hashes.SHA256(),
-        )
+        public_key_id = str(settings.WECHAT_PAY_PUBLIC_KEY_ID or "").strip()
+        public_key_path = str(settings.WECHAT_PAY_PUBLIC_KEY_PATH or "").strip()
+        public_key_mode_enabled = bool(public_key_id and public_key_path)
+        public_key_mode_error: str | None = None
+
+        if public_key_mode_enabled:
+            if serial_no == public_key_id:
+                try:
+                    public_key = load_wechat_pay_public_key()
+                    self._verify_signature_with_public_key(
+                        public_key,
+                        signature=signature,
+                        message=message,
+                    )
+                    print(
+                        "[WeChat Pay Notify Verify] "
+                        f"mode=public_key, serial_no={serial_no}, key_path={public_key_path}"
+                    )
+                    return
+                except InvalidSignature as exc:
+                    raise WechatPayError("WeChat Pay notification signature verification failed") from exc
+            else:
+                public_key_mode_error = (
+                    "WeChat Pay public key id mismatch: "
+                    f"expected {public_key_id}, got {serial_no}"
+                )
+
+        try:
+            public_keys = self._load_platform_certificates()
+            public_key = public_keys.get(serial_no)
+            if public_key is None:
+                raise WechatPayError(f"WeChat Pay platform certificate not found for serial {serial_no}")
+            self._verify_signature_with_public_key(
+                public_key,
+                signature=signature,
+                message=message,
+            )
+            print(
+                "[WeChat Pay Notify Verify] "
+                f"mode=platform_certificate, serial_no={serial_no}"
+            )
+            return
+        except InvalidSignature as exc:
+            raise WechatPayError("WeChat Pay notification signature verification failed") from exc
+        except WechatPayError:
+            if public_key_mode_error:
+                raise WechatPayError(public_key_mode_error)
+            raise
 
 
 wechat_pay_service = WechatPayService()

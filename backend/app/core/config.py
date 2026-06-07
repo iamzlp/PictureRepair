@@ -89,6 +89,8 @@ class Settings(BaseSettings):
     WECHAT_PAY_CERT_SERIAL_NO: Optional[str] = None
     WECHAT_PAY_PRIVATE_KEY_PATH: Optional[str] = None
     WECHAT_PAY_NOTIFY_URL: Optional[str] = None
+    WECHAT_PAY_PUBLIC_KEY_ID: Optional[str] = None
+    WECHAT_PAY_PUBLIC_KEY_PATH: Optional[str] = None
 
     # Payment Testing
     PAYMENT_USE_TEST_PRICES: bool = False
