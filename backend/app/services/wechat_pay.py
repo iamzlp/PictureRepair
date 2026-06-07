@@ -18,6 +18,10 @@ class WechatPayError(Exception):
     pass
 
 
+class WechatPayTimeoutError(WechatPayError):
+    pass
+
+
 @lru_cache(maxsize=1)
 def load_merchant_private_key():
     path = settings.WECHAT_PAY_PRIVATE_KEY_PATH
@@ -69,7 +73,15 @@ class WechatPayService:
             f'serial_no="{settings.WECHAT_PAY_CERT_SERIAL_NO}"'
         )
 
-    def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        timeout: int = 30,
+        retries: int = 0,
+    ) -> dict[str, Any]:
         self.ensure_configured()
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")) if payload is not None else ""
         headers = {
@@ -78,22 +90,52 @@ class WechatPayService:
             "User-Agent": "PictureRepair/1.0",
             "Authorization": self._build_authorization(method.upper(), path, body),
         }
-        response = requests.request(
-            method=method.upper(),
-            url=f"{self.base_url}{path}",
-            headers=headers,
-            data=body.encode("utf-8") if body else None,
-            timeout=30,
-        )
-        response_text = response.text or ""
-        if response.status_code < 200 or response.status_code >= 300:
-            raise WechatPayError(f"WeChat Pay API error {response.status_code}: {response_text[:500]}")
-        if not response_text.strip():
-            return {}
-        try:
-            return response.json()
-        except ValueError as exc:
-            raise WechatPayError(f"WeChat Pay returned invalid JSON: {response_text[:500]}") from exc
+        url = f"{self.base_url}{path}"
+        max_attempts = max(1, retries + 1)
+        for attempt in range(1, max_attempts + 1):
+            try:
+                print(
+                    "[WeChat Pay Request] "
+                    f"method={method.upper()}, path={path}, attempt={attempt}/{max_attempts}, "
+                    f"timeout={timeout}, body={body[:1000]}"
+                )
+                response = requests.request(
+                    method=method.upper(),
+                    url=url,
+                    headers=headers,
+                    data=body.encode("utf-8") if body else None,
+                    timeout=timeout,
+                )
+                response_text = response.text or ""
+                print(
+                    "[WeChat Pay Response] "
+                    f"method={method.upper()}, path={path}, attempt={attempt}/{max_attempts}, "
+                    f"status_code={response.status_code}, body={response_text[:1000]}"
+                )
+                if response.status_code < 200 or response.status_code >= 300:
+                    raise WechatPayError(f"WeChat Pay API error {response.status_code}: {response_text[:500]}")
+                if not response_text.strip():
+                    return {}
+                try:
+                    return response.json()
+                except ValueError as exc:
+                    raise WechatPayError(f"WeChat Pay returned invalid JSON: {response_text[:500]}") from exc
+            except requests.exceptions.ReadTimeout as exc:
+                print(
+                    "[WeChat Pay Timeout] "
+                    f"method={method.upper()}, path={path}, attempt={attempt}/{max_attempts}, timeout={timeout}, "
+                    f"error={exc}"
+                )
+                if attempt < max_attempts:
+                    continue
+                raise WechatPayTimeoutError("微信支付下单超时，请稍后重试") from exc
+            except requests.exceptions.RequestException as exc:
+                print(
+                    "[WeChat Pay Network Error] "
+                    f"method={method.upper()}, path={path}, attempt={attempt}/{max_attempts}, error={exc}"
+                )
+                raise WechatPayError(f"微信支付网络请求失败：{exc.__class__.__name__}") from exc
+        raise WechatPayTimeoutError("微信支付下单超时，请稍后重试")
 
     def create_jsapi_order(
         self,
@@ -117,7 +159,7 @@ class WechatPayService:
                 "openid": openid,
             },
         }
-        response = self._request("POST", "/v3/pay/transactions/jsapi", payload)
+        response = self._request("POST", "/v3/pay/transactions/jsapi", payload, timeout=30, retries=1)
         prepay_id = str(response.get("prepay_id") or "").strip()
         if not prepay_id:
             raise WechatPayError(f"WeChat Pay create order missing prepay_id: {json.dumps(response, ensure_ascii=False)}")
@@ -136,6 +178,12 @@ class WechatPayService:
             "paySign": pay_sign,
             "raw_response": response,
         }
+
+    def query_order_by_out_trade_no(self, *, out_trade_no: str) -> dict[str, Any]:
+        if not out_trade_no:
+            raise WechatPayError("out_trade_no is required")
+        path = f"/v3/pay/transactions/out-trade-no/{out_trade_no}?mchid={settings.WECHAT_PAY_MCH_ID}"
+        return self._request("GET", path, timeout=15, retries=1)
 
     def _decrypt_aes_gcm(self, *, nonce: str, ciphertext: str, associated_data: str = "") -> str:
         key = (settings.WECHAT_PAY_API_V3_KEY or "").encode("utf-8")

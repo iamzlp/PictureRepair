@@ -50,10 +50,14 @@ Page({
     if (this.data.loadingMore) return
     this.setData({ loading: Boolean(isFirst), loadingMore: true })
     try {
-      const list = await api.listOrders({ skip: this.data.skip, limit: this.data.limit })
+      const list = await api.listOrders({
+        skip: this.data.skip,
+        limit: this.data.limit,
+        successfulOnly: true
+      })
       const orders = (list || []).map((o) => ({
         ...o,
-        timeText: formatTime(o.created_at),
+        timeText: formatTime(o.paid_at || o.created_at),
         amountText: (o.price_cents / 100).toFixed(2)
       }))
       this.setData({

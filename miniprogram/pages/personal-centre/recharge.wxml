@@ -2,7 +2,6 @@
   <view class="mask"></view>
   <view class="card">
     <view class="close" bindtap="onClose">×</view>
-    <view class="dot"></view>
     <view class="title">保存更多记忆</view>
     <view class="subtitle">选择套餐继续以高质量修复您的照片</view>
 

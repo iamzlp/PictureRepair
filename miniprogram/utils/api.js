@@ -207,6 +207,7 @@ function listOrders(params) {
   const query = []
   if (params && typeof params.skip === 'number') query.push(`skip=${params.skip}`)
   if (params && typeof params.limit === 'number') query.push(`limit=${params.limit}`)
+  if (params && params.successfulOnly) query.push('successful_only=true')
   const suffix = query.length ? `?${query.join('&')}` : ''
   return request({
     url: `/payments/orders${suffix}`

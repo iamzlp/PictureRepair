@@ -22,13 +22,23 @@ from app.schemas import (
     PurchaseResponse,
     WechatPayCreateResponse,
 )
-from app.services.wechat_pay import WechatPayError, wechat_pay_service
+from app.services.wechat_pay import WechatPayError, WechatPayTimeoutError, wechat_pay_service
 
 router = APIRouter()
 
 
 def build_wechat_out_trade_no() -> str:
     return f"wx{uuid.uuid4().hex[:30]}"
+
+
+def parse_wechat_paid_at(value: Any) -> datetime:
+    text = str(value or "").strip()
+    if not text:
+        return datetime.now(timezone.utc)
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return datetime.now(timezone.utc)
 
 
 async def apply_paid_order_credits_if_needed(db: AsyncSession, order: Order, user: User) -> CreditTransaction | None:
@@ -54,6 +64,52 @@ async def apply_paid_order_credits_if_needed(db: AsyncSession, order: Order, use
     )
     db.add(transaction)
     return transaction
+
+
+async def sync_wechat_order_status_if_needed(db: AsyncSession, order: Order, user: User) -> Order:
+    if order.payment_provider != "wechat" or not order.provider_trade_no:
+        return order
+    if order.status == "paid":
+        return order
+
+    try:
+        payload = await asyncio.to_thread(
+            wechat_pay_service.query_order_by_out_trade_no,
+            out_trade_no=order.provider_trade_no,
+        )
+    except WechatPayError as exc:
+        print(
+            "[WeChat Pay Query Failed] "
+            f"order_id={order.id}, out_trade_no={order.provider_trade_no}, error={exc}"
+        )
+        return order
+
+    trade_state = str(payload.get("trade_state") or "").strip().upper()
+    transaction_id = str(payload.get("transaction_id") or "").strip()
+    if trade_state == "SUCCESS":
+        await apply_paid_order_credits_if_needed(db, order, user)
+        order.status = "paid"
+        order.paid_at = parse_wechat_paid_at(payload.get("success_time"))
+        await db.commit()
+        await db.refresh(order)
+        await db.refresh(user)
+        print(
+            "[WeChat Pay Query Success] "
+            f"order_id={order.id}, out_trade_no={order.provider_trade_no}, transaction_id={transaction_id}, "
+            f"user_id={user.id}, balance={user.mileage_balance}"
+        )
+        return order
+
+    if trade_state:
+        order.status = f"wechat_{trade_state.lower()}"
+        order.paid_at = None
+        await db.commit()
+        await db.refresh(order)
+        print(
+            "[WeChat Pay Query NonSuccess] "
+            f"order_id={order.id}, out_trade_no={order.provider_trade_no}, trade_state={trade_state}"
+        )
+    return order
 
 def get_packages() -> dict[str, CreditPackage]:
     single_price = 299
@@ -157,6 +213,11 @@ async def create_wechat_purchase(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     out_trade_no = build_wechat_out_trade_no()
+    print(
+        "[WeChat Pay Create Start] "
+        f"user_id={current_user.id}, package_id={package.id}, title={package.title}, "
+        f"amount_cents={package.price_cents}, out_trade_no={out_trade_no}"
+    )
     order = Order(
         user_id=current_user.id,
         package_id=package.id,
@@ -171,6 +232,10 @@ async def create_wechat_purchase(
     db.add(order)
     await db.commit()
     await db.refresh(order)
+    if order.paid_at is not None:
+        order.paid_at = None
+        await db.commit()
+        await db.refresh(order)
 
     try:
         pay_data = await asyncio.to_thread(
@@ -180,10 +245,31 @@ async def create_wechat_purchase(
             amount_cents=package.price_cents,
             openid=current_user.openid,
         )
+    except WechatPayTimeoutError as exc:
+        order.status = "create_timeout"
+        await db.commit()
+        print(
+            "[WeChat Pay Create Timeout] "
+            f"order_id={order.id}, user_id={current_user.id}, package_id={package.id}, "
+            f"amount_cents={package.price_cents}, out_trade_no={out_trade_no}, error={exc}"
+        )
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
     except WechatPayError as exc:
         order.status = "create_failed"
         await db.commit()
+        print(
+            "[WeChat Pay Create Failed] "
+            f"order_id={order.id}, user_id={current_user.id}, package_id={package.id}, "
+            f"amount_cents={package.price_cents}, out_trade_no={out_trade_no}, error={exc}"
+        )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    print(
+        "[WeChat Pay Create Success] "
+        f"order_id={order.id}, user_id={current_user.id}, package_id={package.id}, "
+        f"amount_cents={package.price_cents}, out_trade_no={out_trade_no}, "
+        f"prepay_id={pay_data.get('prepay_id', '')}"
+    )
 
     return WechatPayCreateResponse(
         order_id=order.id,
@@ -261,13 +347,27 @@ async def list_orders(
     db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 20,
+    successful_only: bool = False,
 ) -> Any:
+    if successful_only:
+        pending_result = await db.execute(
+            select(Order)
+            .where(
+                Order.user_id == current_user.id,
+                Order.payment_provider == "wechat",
+                Order.status.in_(("pending", "create_timeout", "wechat_userpaying")),
+            )
+            .order_by(Order.created_at.desc())
+            .limit(5)
+        )
+        for order in pending_result.scalars().all():
+            await sync_wechat_order_status_if_needed(db, order, current_user)
+
+    stmt = select(Order).where(Order.user_id == current_user.id)
+    if successful_only:
+        stmt = stmt.where(Order.status.in_(("paid", "mock_paid")))
     result = await db.execute(
-        select(Order)
-        .where(Order.user_id == current_user.id)
-        .order_by(Order.created_at.desc())
-        .offset(skip)
-        .limit(limit)
+        stmt.order_by(Order.created_at.desc()).offset(skip).limit(limit)
     )
     return result.scalars().all()
 
@@ -287,6 +387,8 @@ async def get_order(
     order = result.scalars().first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    if order.payment_provider == "wechat" and order.status != "paid":
+        order = await sync_wechat_order_status_if_needed(db, order, current_user)
     return order
 
 

@@ -16,6 +16,7 @@ function getOrderStatusMeta(status: string) {
     pending: '待支付',
     paid: '支付成功',
     create_failed: '下单失败',
+    create_timeout: '下单超时',
     wechat_success: '微信支付成功',
     wechat_notpay: '未支付',
     wechat_closed: '已关闭',
@@ -24,6 +25,12 @@ function getOrderStatusMeta(status: string) {
     wechat_payerror: '支付失败',
   }
   return map[value] || value || '未知状态'
+}
+
+function getPaidAtText(status: string, paidAt?: string | null) {
+  const value = String(status || '').trim()
+  if (value !== 'paid' && value !== 'mock_paid') return '—'
+  return formatDateTime(paidAt)
 }
 
 function getProviderLabel(provider: string) {
@@ -117,7 +124,7 @@ export function OrderDetailPage() {
                     ['支付渠道', getProviderLabel(order.payment_provider)],
                     ['渠道单号', order.provider_trade_no || '—'],
                     ['创建时间', formatDateTime(order.created_at)],
-                    ['支付时间', formatDateTime(order.paid_at)],
+                    ['支付时间', getPaidAtText(order.status, order.paid_at)],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-[24px] border border-white/10 bg-black/10 p-4">
                       <p className="text-xs tracking-[0.24em] text-archive-paper/40 uppercase">{label}</p>
@@ -169,7 +176,7 @@ export function OrderDetailPage() {
               <div className="mt-4 rounded-[24px] border border-white/10 bg-black/10 p-4">
                 <StatusBadge value={order.status} label={order.status} />
                 <p className="mt-4 text-sm leading-7 text-archive-paper/80">
-                  当前订单通过 {getProviderLabel(order.payment_provider)} 渠道创建，状态为 {getOrderStatusMeta(order.status)}，支付时间为 {formatDateTime(order.paid_at)}。
+                  当前订单通过 {getProviderLabel(order.payment_provider)} 渠道创建，状态为 {getOrderStatusMeta(order.status)}，支付时间为 {getPaidAtText(order.status, order.paid_at)}。
                 </p>
               </div>
             </div>
