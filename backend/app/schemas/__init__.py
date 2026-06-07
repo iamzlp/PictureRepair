@@ -23,4 +23,5 @@ from .billing import (
     OrderResponse,
     PurchaseRequest,
     PurchaseResponse,
+    WechatPayCreateResponse,
 )

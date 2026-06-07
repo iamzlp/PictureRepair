@@ -22,6 +22,17 @@ class PurchaseResponse(BaseModel):
     balance: int
 
 
+class WechatPayCreateResponse(BaseModel):
+    order_id: str
+    package_id: str
+    payment_provider: str
+    timeStamp: str
+    nonceStr: str
+    package: str
+    signType: str
+    paySign: str
+
+
 class ExportResponse(BaseModel):
     task_id: str
     result_url: str

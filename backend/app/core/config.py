@@ -83,6 +83,13 @@ class Settings(BaseSettings):
     WECHAT_SECRET: Optional[str] = None
     MOCK_WECHAT_LOGIN: bool = False
 
+    # WeChat Pay (Mini Program Payment / API v3)
+    WECHAT_PAY_MCH_ID: Optional[str] = None
+    WECHAT_PAY_API_V3_KEY: Optional[str] = None
+    WECHAT_PAY_CERT_SERIAL_NO: Optional[str] = None
+    WECHAT_PAY_PRIVATE_KEY_PATH: Optional[str] = None
+    WECHAT_PAY_NOTIFY_URL: Optional[str] = None
+
     # Payment Testing
     PAYMENT_USE_TEST_PRICES: bool = False
     PAYMENT_TEST_PRICE_SINGLE_1_CENTS: int = 1

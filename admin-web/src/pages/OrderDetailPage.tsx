@@ -9,6 +9,30 @@ import { useAdminAuthStore } from '@/stores/adminAuthStore'
 import { AdminOrder, fetchOrderDetail, normalizeError } from '@/utils/api'
 import { formatCurrency, formatDateTime } from '@/utils/format'
 
+function getOrderStatusMeta(status: string) {
+  const value = String(status || '').trim()
+  const map: Record<string, string> = {
+    mock_paid: '模拟支付成功',
+    pending: '待支付',
+    paid: '支付成功',
+    create_failed: '下单失败',
+    wechat_success: '微信支付成功',
+    wechat_notpay: '未支付',
+    wechat_closed: '已关闭',
+    wechat_revoked: '已撤销',
+    wechat_userpaying: '用户支付中',
+    wechat_payerror: '支付失败',
+  }
+  return map[value] || value || '未知状态'
+}
+
+function getProviderLabel(provider: string) {
+  const value = String(provider || '').trim()
+  if (value === 'wechat') return '微信支付'
+  if (value === 'mock') return '模拟支付'
+  return value || '未知渠道'
+}
+
 export function OrderDetailPage() {
   const navigate = useNavigate()
   const { orderId = '' } = useParams()
@@ -81,7 +105,7 @@ export function OrderDetailPage() {
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <StatusBadge value={order.status} label={order.status} />
+                  <StatusBadge value={order.status} label={getOrderStatusMeta(order.status)} />
                   <StatusBadge value={order.package_id} label={order.package_id} />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -90,7 +114,7 @@ export function OrderDetailPage() {
                     ['用户 ID', order.user_id],
                     ['套餐 ID', order.package_id],
                     ['订单标题', order.title],
-                    ['支付渠道', order.payment_provider],
+                    ['支付渠道', getProviderLabel(order.payment_provider)],
                     ['渠道单号', order.provider_trade_no || '—'],
                     ['创建时间', formatDateTime(order.created_at)],
                     ['支付时间', formatDateTime(order.paid_at)],
@@ -145,7 +169,7 @@ export function OrderDetailPage() {
               <div className="mt-4 rounded-[24px] border border-white/10 bg-black/10 p-4">
                 <StatusBadge value={order.status} label={order.status} />
                 <p className="mt-4 text-sm leading-7 text-archive-paper/80">
-                  当前订单通过 {order.payment_provider} 渠道创建，支付时间为 {formatDateTime(order.paid_at)}。
+                  当前订单通过 {getProviderLabel(order.payment_provider)} 渠道创建，状态为 {getOrderStatusMeta(order.status)}，支付时间为 {formatDateTime(order.paid_at)}。
                 </p>
               </div>
             </div>

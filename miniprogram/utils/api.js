@@ -193,6 +193,16 @@ function mockPurchase(packageId) {
   })
 }
 
+function createWechatPurchase(packageId) {
+  return request({
+    url: '/payments/wechat/create',
+    method: 'POST',
+    data: {
+      package_id: packageId
+    }
+  })
+}
+
 function listOrders(params) {
   const query = []
   if (params && typeof params.skip === 'number') query.push(`skip=${params.skip}`)
@@ -200,6 +210,12 @@ function listOrders(params) {
   const suffix = query.length ? `?${query.join('&')}` : ''
   return request({
     url: `/payments/orders${suffix}`
+  })
+}
+
+function getOrder(orderId) {
+  return request({
+    url: `/payments/orders/${orderId}`
   })
 }
 
@@ -220,12 +236,14 @@ module.exports = {
   createRepairVideo,
   exportRepairTask,
   getPackages,
+  getOrder,
   getMe,
   getRepairTask,
   updateMe,
   listOrders,
   listTasks,
   listTransactions,
+  createWechatPurchase,
   mockPurchase,
   mockLogin,
   submitFeedback,

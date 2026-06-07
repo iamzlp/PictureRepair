@@ -13,6 +13,30 @@ import { formatCurrency, formatDateTime } from '@/utils/format'
 
 const PAGE_SIZE = 10
 
+function getOrderStatusMeta(status: string) {
+  const value = String(status || '').trim()
+  const map: Record<string, string> = {
+    mock_paid: '模拟支付成功',
+    pending: '待支付',
+    paid: '支付成功',
+    create_failed: '下单失败',
+    wechat_success: '微信支付成功',
+    wechat_notpay: '未支付',
+    wechat_closed: '已关闭',
+    wechat_revoked: '已撤销',
+    wechat_userpaying: '用户支付中',
+    wechat_payerror: '支付失败',
+  }
+  return map[value] || value || '未知状态'
+}
+
+function getProviderLabel(provider: string) {
+  const value = String(provider || '').trim()
+  if (value === 'wechat') return '微信支付'
+  if (value === 'mock') return '模拟支付'
+  return value || '未知渠道'
+}
+
 export function OrdersPage() {
   const navigate = useNavigate()
   const token = useAdminAuthStore((state) => state.token)
@@ -153,13 +177,14 @@ export function OrdersPage() {
                     <td className="px-5 py-4 break-all text-xs text-archive-paper/70">{order.user_id}</td>
                     <td className="px-5 py-4">
                       <p>{order.package_id}</p>
-                      <p className="mt-1 text-xs text-archive-mist">{order.payment_provider}</p>
+                      <p className="mt-1 text-xs text-archive-mist">{getProviderLabel(order.payment_provider)}</p>
+                      {order.provider_trade_no ? <p className="mt-1 break-all text-[11px] text-archive-paper/45">商户单号：{order.provider_trade_no}</p> : null}
                     </td>
                     <td className="px-5 py-4">
                       <p className="font-display text-2xl text-archive-copper">{formatCurrency(order.price_cents)}</p>
                       <p className="mt-1 text-xs text-archive-mist">{order.credits} 次</p>
                     </td>
-                    <td className="px-5 py-4"><StatusBadge value={order.status} label={order.status} /></td>
+                    <td className="px-5 py-4"><StatusBadge value={order.status} label={getOrderStatusMeta(order.status)} /></td>
                     <td className="px-5 py-4">
                       <p>{formatDateTime(order.created_at)}</p>
                       <p className="mt-1 text-xs text-archive-mist">支付：{formatDateTime(order.paid_at)}</p>

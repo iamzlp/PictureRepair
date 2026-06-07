@@ -41,3 +41,5 @@ minio_data/
 miniprogram/miniprogram_npm/
 miniprogram/node_modules/
 miniprogram/.cache/
+
+backend/certs/

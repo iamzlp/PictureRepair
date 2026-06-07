@@ -80,29 +80,74 @@ Page({
     }
     this.setData({ paying: true })
     try {
-      const result = await api.mockPurchase(this.data.selectedId)
+      const result = await api.createWechatPurchase(this.data.selectedId)
+      await this.requestWechatPayment(result)
+      const paidOrder = await this.waitForOrderPaid(result.order_id)
       await auth.loadUser()
-      wx.showToast({ title: '支付成功', icon: 'success' })
-
-      if ((this.data.from === 'export' || this.data.from === 'video' || this.data.from === 'regenerate') && this.data.taskId && this.data.source) {
-        exportFlow.setPendingExportAction({
-          action: this.data.from,
-          source: this.data.source,
-          taskId: this.data.taskId
+      if (paidOrder) {
+        wx.showToast({ title: '支付成功', icon: 'success' })
+      } else {
+        await new Promise((resolve) => {
+          wx.showModal({
+            title: '支付成功',
+            content: '微信已支付成功，点数正在确认到账，通常几秒内会自动刷新。',
+            showCancel: false,
+            success: resolve,
+            fail: resolve
+          })
         })
-        wx.navigateBack()
-        return
       }
-      if (this.data.from === 'repair' && this.data.source === 'index') {
-        wx.switchTab({ url: '/pages/index/index' })
-        return
-      }
-      wx.switchTab({ url: '/pages/personal-centre/index' })
+      this.handleAfterPaySuccess()
     } catch (error) {
-      wx.showToast({ title: error.message || '支付失败', icon: 'none' })
+      const errMsg = error && error.errMsg ? String(error.errMsg) : ''
+      const message = errMsg.includes('cancel') ? '已取消支付' : (error.message || '支付失败')
+      wx.showToast({ title: message, icon: 'none' })
     } finally {
       this.setData({ paying: false })
     }
+  },
+
+  requestWechatPayment(result) {
+    return new Promise((resolve, reject) => {
+      wx.requestPayment({
+        timeStamp: String(result.timeStamp || ''),
+        nonceStr: String(result.nonceStr || ''),
+        package: String(result.package || ''),
+        signType: String(result.signType || 'RSA'),
+        paySign: String(result.paySign || ''),
+        success: resolve,
+        fail: reject
+      })
+    })
+  },
+
+  handleAfterPaySuccess() {
+    if ((this.data.from === 'export' || this.data.from === 'video' || this.data.from === 'regenerate') && this.data.taskId && this.data.source) {
+      exportFlow.setPendingExportAction({
+        action: this.data.from,
+        source: this.data.source,
+        taskId: this.data.taskId
+      })
+      wx.navigateBack()
+      return
+    }
+    if (this.data.from === 'repair' && this.data.source === 'index') {
+      wx.switchTab({ url: '/pages/index/index' })
+      return
+    }
+    wx.switchTab({ url: '/pages/personal-centre/index' })
+  },
+
+  async waitForOrderPaid(orderId) {
+    if (!orderId) return null
+    for (let i = 0; i < 6; i += 1) {
+      const order = await api.getOrder(orderId).catch(() => null)
+      if (order && order.status === 'paid') {
+        return order
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+    return null
   }
 })
 
