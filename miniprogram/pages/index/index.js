@@ -211,6 +211,10 @@ Page({
       })
       this.startPolling()
     } catch (error) {
+      if (String(error.message).includes('Insufficient')) {
+        wx.navigateTo({ url: '/pages/personal-centre/recharge?from=repair&source=index' })
+        return
+      }
       this.setData({
         creating: false,
         progress: 0,

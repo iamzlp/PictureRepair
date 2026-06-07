@@ -23,6 +23,7 @@ Page({
     videoErrorMessage: '',
     dateText: '',
     exporting: false,
+    regeneratingImage: false,
     generatingVideo: false,
     downloadingVideo: false
   },
@@ -38,6 +39,7 @@ Page({
       await this.loadTask()
     }
     await this.resumePendingExport()
+    await this.resumePendingRegenerate()
     await this.resumePendingVideo()
   },
 
@@ -132,6 +134,12 @@ Page({
     await this.onGenerateVideo()
   },
 
+  async resumePendingRegenerate() {
+    const pending = exportFlow.consumePendingExportAction('view-photos', this.data.taskId, 'regenerate')
+    if (!pending) return
+    await this.onRegenerateImage(false)
+  },
+
   stopVideoPolling() {
     if (this.pollTimer) {
       clearTimeout(this.pollTimer)
@@ -156,6 +164,41 @@ Page({
         this.scheduleVideoPolling()
       }
     }, 4000)
+  },
+
+  async onRegenerateImage(needConfirm = true) {
+    if (!this.data.taskId || this.data.regeneratingImage) return
+    if (!auth.getToken()) {
+      auth.navigateToLogin({ back: 1 })
+      return
+    }
+    if (needConfirm) {
+      const confirmResult = await new Promise((resolve) => {
+        wx.showModal({
+          title: '重新生成图片',
+          content: '将基于原始照片重新生成一张新的修复结果，并消耗 1 点，是否继续？',
+          confirmText: '继续生成',
+          success: resolve,
+          fail: () => resolve({ confirm: false })
+        })
+      })
+      if (!confirmResult || !confirmResult.confirm) return
+    }
+
+    this.setData({ regeneratingImage: true })
+    try {
+      const task = await api.regenerateRepairTask(this.data.taskId)
+      wx.showToast({ title: '重新生成任务已提交', icon: 'success' })
+      wx.redirectTo({ url: `/pages/repair-record/view-photos?taskId=${encodeURIComponent(task.task_id || task.id)}` })
+    } catch (error) {
+      if (String(error.message).includes('Insufficient')) {
+        wx.navigateTo({ url: `/pages/personal-centre/recharge?from=regenerate&source=view-photos&taskId=${encodeURIComponent(this.data.taskId)}` })
+        return
+      }
+      wx.showToast({ title: error.message || '重新生成失败', icon: 'none' })
+    } finally {
+      this.setData({ regeneratingImage: false })
+    }
   },
 
   async onGenerateVideo() {

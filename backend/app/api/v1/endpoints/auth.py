@@ -59,6 +59,39 @@ def apply_user_profile(user: User, request: WeChatPhoneRequest, fallback_user: U
         user.avatar_url = fallback_user.avatar_url
 
 
+async def create_new_user_with_welcome_credits(
+    db: AsyncSession,
+    *,
+    phone: str | None = None,
+    openid: str | None = None,
+    unionid: str | None = None,
+    nickname: str | None = None,
+) -> User:
+    initial_credits = max(int(settings.INITIAL_USER_CREDITS or 0), 0)
+    user = User(
+        phone=phone,
+        openid=openid,
+        unionid=unionid,
+        nickname=nickname,
+        mileage_balance=initial_credits,
+    )
+    db.add(user)
+    await db.flush()
+
+    if initial_credits > 0:
+        db.add(
+            CreditTransaction(
+                user_id=user.id,
+                change=initial_credits,
+                balance_after=initial_credits,
+                transaction_type="welcome_gift",
+                reference_id=user.id,
+                description=f"Welcome gift: {initial_credits} credits",
+            )
+        )
+    return user
+
+
 async def reassign_user_records(
     db: AsyncSession,
     from_user_id: str,
@@ -86,9 +119,11 @@ async def login_mock(
     user = result.scalars().first()
 
     if not user:
-        # Create new user
-        user = User(phone=phone, nickname=f"User_{phone[-4:]}")
-        db.add(user)
+        user = await create_new_user_with_welcome_credits(
+            db,
+            phone=phone,
+            nickname=f"User_{phone[-4:]}",
+        )
         await db.commit()
         await db.refresh(user)
 
@@ -136,8 +171,12 @@ async def login_wechat(
     result = await db.execute(select(User).where(User.openid == openid))
     user = result.scalars().first()
     if not user:
-        user = User(openid=openid, unionid=unionid, nickname="微信用户")
-        db.add(user)
+        user = await create_new_user_with_welcome_credits(
+            db,
+            openid=openid,
+            unionid=unionid,
+            nickname="微信用户",
+        )
     else:
         user.unionid = unionid or user.unionid
 

@@ -69,6 +69,7 @@ class Settings(BaseSettings):
         "no large motion, no talking, no mouth opening, no waving, no walking, no identity change, no reframing, "
         "no extra people, no face redraw, no flicker, no ghosting, no distortion"
     )
+    INITIAL_USER_CREDITS: int = 2
     VIDEO_GENERATION_CREDIT_COST: int = 10
 
     # Image Model: 'jimeng' (即梦4.0) / 'doubao' (豆包/Seedream 5.0) / 'agnes' (Agnes Image 2.1 Flash)

@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from PIL import Image
+import requests
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -164,11 +165,10 @@ def choose_video_dimensions(image_key: str | None) -> tuple[int, int] | None:
         if not source_width or not source_height:
             return None
 
+        # Keep the original aspect ratio but avoid unnecessary upscaling for video creation.
         long_edge = 1152
-        if source_width >= source_height:
-            scale = long_edge / float(source_width)
-        else:
-            scale = long_edge / float(source_height)
+        source_long_edge = max(source_width, source_height)
+        scale = min(1.0, long_edge / float(source_long_edge))
 
         width = max(256, int(round((source_width * scale) / 16) * 16))
         height = max(256, int(round((source_height * scale) / 16) * 16))
@@ -331,6 +331,15 @@ def build_repair_prompt(mode: RepairMode, extra_prompt: str | None = None) -> st
     return prompt
 
 
+def infer_repair_mode(task: GenerationTask) -> RepairMode | None:
+    task_type = str(task.task_type or "")
+    if task_type == "old_photo_colorize":
+        return RepairMode.COLORIZE
+    if task_type == "old_photo_enhance":
+        return RepairMode.ENHANCE
+    return None
+
+
 @router.post("/tasks", response_model=RepairTaskResponse, response_model_by_alias=False)
 async def create_repair_task(
     request: RepairTaskCreate,
@@ -340,6 +349,8 @@ async def create_repair_task(
 ) -> Any:
     if not request.image_url.strip():
         raise HTTPException(status_code=422, detail="image_url is required")
+    if (current_user.mileage_balance or 0) < 1:
+        raise HTTPException(status_code=402, detail="Insufficient photo credits")
 
     normalized_image_url = storage_manager.normalize_file_reference(request.image_url.strip())
     prompt = build_repair_prompt(request.mode, request.extra_prompt)
@@ -389,13 +400,58 @@ async def get_repair_task(
     if not task:
         raise HTTPException(status_code=404, detail="Repair task not found")
 
-    mode = None
-    if task.task_type == "old_photo_colorize":
-        mode = RepairMode.COLORIZE
-    elif task.task_type == "old_photo_enhance":
-        mode = RepairMode.ENHANCE
+    return serialize_repair_task(task, mode=infer_repair_mode(task))
 
-    return serialize_repair_task(task, mode=mode)
+
+@router.post("/tasks/{task_id}/regenerate", response_model=RepairTaskResponse, response_model_by_alias=False)
+async def regenerate_repair_task(
+    task_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(deps.get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    result = await db.execute(
+        select(GenerationTask).where(
+            GenerationTask.id == task_id,
+            GenerationTask.user_id == current_user.id,
+        )
+    )
+    source_task = result.scalars().first()
+    if not source_task:
+        raise HTTPException(status_code=404, detail="Repair task not found")
+    if source_task.status != TaskStatus.COMPLETED or not source_task.reference_image_url:
+        raise HTTPException(status_code=409, detail="请先完成照片修复后再重新生成")
+    if (current_user.mileage_balance or 0) < 1:
+        raise HTTPException(status_code=402, detail="Insufficient photo credits")
+
+    prompt_trace = {
+        "regenerated_from_task_id": source_task.id,
+        "task_type": source_task.task_type,
+        "reference_image_urls": [source_task.reference_image_url],
+        "resolved_aspect_ratio": source_task.aspect_ratio.value if hasattr(source_task.aspect_ratio, "value") else str(source_task.aspect_ratio),
+    }
+    regenerated_task = GenerationTask(
+        user_id=current_user.id,
+        prompt=source_task.prompt,
+        task_type=source_task.task_type,
+        style=source_task.style,
+        aspect_ratio=source_task.aspect_ratio,
+        reference_image_url=source_task.reference_image_url,
+        prompt_trace=json.dumps(prompt_trace, ensure_ascii=False),
+        status=TaskStatus.PENDING,
+        progress=0,
+    )
+    db.add(regenerated_task)
+    await db.commit()
+    await db.refresh(regenerated_task)
+
+    print(
+        "[Repair Regenerate Create] "
+        f"source_task_id={source_task.id}, new_task_id={regenerated_task.id}, user_id={current_user.id}"
+    )
+
+    background_tasks.add_task(process_generation_task, str(regenerated_task.id))
+    return serialize_repair_task(regenerated_task, mode=infer_repair_mode(regenerated_task))
 
 
 @router.post("/tasks/{task_id}/export", response_model=ExportResponse)
@@ -416,47 +472,12 @@ async def export_repair_result(
     if task.status != TaskStatus.COMPLETED or not task.result_url:
         raise HTTPException(status_code=409, detail="Repair task is not completed")
 
-    existing_export = await db.execute(
-        select(CreditTransaction).where(
-            CreditTransaction.user_id == current_user.id,
-            CreditTransaction.transaction_type == "export",
-            CreditTransaction.reference_id == task.id,
-        )
-    )
-    existing_transaction = existing_export.scalars().first()
-    if existing_transaction:
-        return ExportResponse(
-            task_id=task.id,
-            result_url=storage_manager.resolve_public_url(task.result_url, expires=900) or "",
-            balance=current_user.mileage_balance or 0,
-            charged=False,
-            transaction_id=existing_transaction.id,
-        )
-
-    if (current_user.mileage_balance or 0) < 1:
-        raise HTTPException(status_code=402, detail="Insufficient photo credits")
-
-    current_user.mileage_balance -= 1
-    transaction = CreditTransaction(
-        user_id=current_user.id,
-        change=-1,
-        balance_after=current_user.mileage_balance,
-        transaction_type="export",
-        reference_id=task.id,
-        description="Export repaired photo",
-    )
-    db.add(transaction)
-
-    await db.commit()
-    await db.refresh(current_user)
-    await db.refresh(transaction)
-
     return ExportResponse(
         task_id=task.id,
         result_url=storage_manager.resolve_public_url(task.result_url, expires=900) or "",
-        balance=current_user.mileage_balance,
-        charged=True,
-        transaction_id=transaction.id,
+        balance=current_user.mileage_balance or 0,
+        charged=False,
+        transaction_id=None,
     )
 
 
@@ -501,13 +522,32 @@ async def create_repair_video(
         f"task_id={task.id}, user_id={current_user.id}, source_image_url={source_image_url}, "
         f"prompt={prompt}, width={video_width}, height={video_height}"
     )
-    create_payload = await asyncio.to_thread(
-        agnes_video_adapter.create_video_task,
-        prompt,
-        source_image_url,
-        video_width,
-        video_height,
-    )
+    try:
+        create_payload = await asyncio.to_thread(
+            agnes_video_adapter.create_video_task,
+            prompt,
+            source_image_url,
+            video_width,
+            video_height,
+        )
+    except requests.exceptions.Timeout as error:
+        print(
+            "[Repair Video Create Timeout] "
+            f"task_id={task.id}, user_id={current_user.id}, width={video_width}, height={video_height}, error={error}"
+        )
+        raise HTTPException(status_code=504, detail="Agnes 视频任务创建超时，请稍后重试") from error
+    except requests.exceptions.RequestException as error:
+        print(
+            "[Repair Video Create Request Error] "
+            f"task_id={task.id}, user_id={current_user.id}, width={video_width}, height={video_height}, error={error}"
+        )
+        raise HTTPException(status_code=502, detail="Agnes 视频任务创建失败，请稍后重试") from error
+    except Exception as error:
+        print(
+            "[Repair Video Create Exception] "
+            f"task_id={task.id}, user_id={current_user.id}, width={video_width}, height={video_height}, error={error}"
+        )
+        raise HTTPException(status_code=502, detail=str(error) or "Agnes 视频任务创建失败") from error
     print(
         "[Repair Video Create Payload] "
         f"task_id={task.id}, payload={summarize_video_payload(create_payload)}"

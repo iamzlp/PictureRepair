@@ -15,9 +15,21 @@ function formatTime(iso) {
 
 function getTransactionMeta(type, description) {
   const metaMap = {
+    welcome_gift: {
+      title: '新用户赠送',
+      fallbackDescription: '新用户赠送 2 点体验额度'
+    },
     purchase: {
       title: '充值获得',
       fallbackDescription: '充值成功，点数已到账'
+    },
+    repair: {
+      title: '开始修复',
+      fallbackDescription: '修复成功，扣除 1 点'
+    },
+    regenerate: {
+      title: '重新生成图片',
+      fallbackDescription: '重新生成成功，扣除 1 点'
     },
     export: {
       title: '下载高清',

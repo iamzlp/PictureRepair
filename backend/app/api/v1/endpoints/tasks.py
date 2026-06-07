@@ -9,6 +9,7 @@ import json
 from app.schemas import GenerationRequest, GenerationTaskResponse, TaskStatus
 from app.core.config import settings
 from app.db.session import get_db, async_session_factory
+from app.models.billing import CreditTransaction
 from app.models.task import GenerationTask
 from app.models.user import User
 from app.services.volc_adapter import volc_adapter
@@ -43,6 +44,42 @@ def load_task_trace(task: GenerationTask) -> dict:
         return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
+
+
+async def charge_completed_repair_if_needed(db: AsyncSession, task: GenerationTask) -> None:
+    task_type = str(task.task_type or "")
+    if not task_type.startswith("old_photo_"):
+        return
+
+    user_result = await db.execute(select(User).where(User.id == task.user_id))
+    user = user_result.scalars().first()
+    if not user:
+        raise Exception("Repair task user not found")
+
+    existing_charge = await db.execute(
+        select(CreditTransaction).where(
+            CreditTransaction.user_id == user.id,
+            CreditTransaction.transaction_type == "repair",
+            CreditTransaction.reference_id == task.id,
+        )
+    )
+    if existing_charge.scalars().first():
+        return
+
+    if (user.mileage_balance or 0) < 1:
+        raise Exception("Insufficient photo credits")
+
+    user.mileage_balance = (user.mileage_balance or 0) - 1
+    db.add(
+        CreditTransaction(
+            user_id=user.id,
+            change=-1,
+            balance_after=user.mileage_balance,
+            transaction_type="repair",
+            reference_id=task.id,
+            description="Generate repaired photo",
+        )
+    )
 
 # -------------------------------------------------------------------
 # Real Worker (Volcengine + Storage)
@@ -126,6 +163,7 @@ async def process_generation_task(task_id: str):
             )
 
             # 4. Update Status -> COMPLETED
+            await charge_completed_repair_if_needed(db, task)
             task.status = TaskStatus.COMPLETED
             task.progress = 100
             task.result_url = image_url

@@ -84,13 +84,17 @@ Page({
       await auth.loadUser()
       wx.showToast({ title: '支付成功', icon: 'success' })
 
-      if ((this.data.from === 'export' || this.data.from === 'video') && this.data.taskId && this.data.source) {
+      if ((this.data.from === 'export' || this.data.from === 'video' || this.data.from === 'regenerate') && this.data.taskId && this.data.source) {
         exportFlow.setPendingExportAction({
           action: this.data.from,
           source: this.data.source,
           taskId: this.data.taskId
         })
         wx.navigateBack()
+        return
+      }
+      if (this.data.from === 'repair' && this.data.source === 'index') {
+        wx.switchTab({ url: '/pages/index/index' })
         return
       }
       wx.switchTab({ url: '/pages/personal-centre/index' })
