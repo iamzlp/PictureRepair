@@ -8,24 +8,13 @@
     <view class="section">
       <view class="section-title">1. 开发者处理的信息</view>
       <view class="text">根据法律规定，开发者仅处理实现小程序功能所必要的信息。</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，收集你的微信昵称、头像，用途是【注册和辨别用户使用】</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，收集你的位置信息，用途是【注册信息】</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，访问你的摄像头，用途是【用于拍摄照片】</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，访问你的麦克风，用途是【用于录音发指令】</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，收集你的手机号，用途是【注册和辨别用户使用】</view>
-      <view class="bullet">• 开发者  收集你的设备信息，用于注册信息。</view>
-      <view class="bullet">• 开发者  收集你的发布内容，用于历史内容的展现。</view>
-      <view class="bullet">• 开发者将在获取你的明示同意后，使用你的相册（仅写入）权限，用途是【存放修复后的照片信息】</view>
-      <view class="bullet">• 开发者  收集你的邮箱，用于注册和辨别用户使用。</view>
-      <view class="bullet">• 开发者  收集你的操作日志，用于便于优化迭代程序。</view>
-      <view class="bullet">• 开发者  收集你的订单信息，用于提供更好的订单体验。</view>
-      <view class="bullet">• 开发者  收集你选中的照片或视频信息，用于用于修复照片功能。</view>
-      <view class="bullet">• 开发者  收集你的发票信息，用于付费后便于开发票。</view>
-      <view class="bullet">• 开发者  收集你选中的文件，用于用于修复照片功能。</view>
-      <view class="bullet">• 开发者  开发者  读取你的剪切板，用于用于修复照片功能。</view>
-      <view class="bullet">• 开开发者  收集你的地址，用于邮寄实体相册使用。</view>
-      <view class="bullet">• 开发者  调用你的方向传感器，用于调整照片位置，提高用户体验。</view>
-      <view class="bullet">• 开发者  获取你选择的位置信息，用于为照片增加更多的信息。</view>
+      <view class="bullet">• 开发者将在获取你的明示同意后，收集你的手机号，用途是【手机号绑定/登录，登录与账号识别】</view>
+      <view class="bullet">• 开发者将在获取你的明示同意后，访问你的摄像头，用途是【拍摄照片，照片修复、图片生成】</view>
+      <view class="bullet">• 开发者将在获取你的明示同意后，收集你的微信昵称、头像，用途是【个人资料展示】</view>
+      <view class="bullet">• 开发者收集你选中的照片或视频信息，用于照片修复、图片生成、视频生成。</view>
+      <view class="bullet">• 开发者将在获取你的明示同意后，使用你的相册（仅写入）权限，用途是【保存照片】</view>
+      <view class="bullet">• 开发者收集你的订单信息，用于订单支付、充值到账、订单查询。</view>
+      <view class="bullet">• 开发者收集你的发布内容，用于反馈处理与客服排障。</view>
     </view>
 
     
@@ -39,18 +28,17 @@
       <view class="bullet">3.1 关于你的个人信息，你可以通过以下方式与开发者联系，行使查阅、复制、更正、删除等法定权利。</view>
       <view class="bullet">3.2 若你在小程序中注册了账号，你可以通过以下方式与开发者联系，申请注销你在小程序中使用的账号。在受理你的申请后，开发者承诺在十五个工作日内完成核查和处理，并按照法律法规要求处理你的相关信息。</view>
       <view class="bullet">邮箱:iamzlp@hotmail.com</view>
-      <view class="bullet">微信号:iamzlp</view>
     </view>
 
     <view class="section">
       <view class="section-title">4. 开发者对信息的存储</view>
-      <view class="text">开发者承诺，除法律法规另有规定外，开发者对你的信息的保存期限应当为实现处理目的所必要的最短时间。</view>
+      <view class="text">4.1 开发者承诺，除法律法规另有规定外，开发者对你的信息的保存期限应当为实现处理目的所必要的最短时间。</view>
     </view>
 
     <view class="section">
       <view class="section-title">5. 信息的使用规则</view>
       <view class="bullet">5.1 开发者将会在本指引所明示的用途内使用收集的信息。</view>
-      <view class="bullet">如开发者使用你的信息超出本指引目的或合理范围，开发者必须在变更使用目的或范围前，再次以邮件和公告的方式告知并征得你的明示同意。</view>
+      <view class="bullet">5.2 如开发者使用你的信息超出本指引目的或合理范围，开发者必须在变更使用目的或范围前，再次以公告的方式告知并征得你的明示同意。</view>
     </view>
 
     <view class="section">
@@ -63,7 +51,6 @@
     <view class="section">
       <view class="section-title">7. 你认为开发者未遵守上述约定，或有其他的投诉建议、或未成年人个人信息保护相关问题，可通过以下方式与开发者联系；或者向微信进行投诉。</view>
       <view class="text">邮箱 : iamzlp@hotmail.com</view>
-      <view class="text">微信号 : iamzlp</view>
       
     </view>
   </view>
