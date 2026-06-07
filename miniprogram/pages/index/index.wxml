@@ -74,8 +74,8 @@
       <view class="step">
         <view class="step-badge">2</view>
         <view class="step-body">
-          <text class="step-name">AI 智能处理</text>
-          <text class="step-desc">我们将使用 AI 自动分析并修复照片细节。</text>
+          <text class="step-name">智能处理</text>
+          <text class="step-desc">选择“图片清晰”或“黑白上色”按钮后，点击“开始修复”按钮，我们将使用 AI 自动分析并修复照片细节。</text>
         </view>
       </view>
       <view class="step">
