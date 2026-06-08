@@ -13,6 +13,32 @@ function formatTime(iso) {
   return `${y}-${m}-${day} ${hh}:${mm}`
 }
 
+function normalizeDescription(type, description, fallbackDescription) {
+  const text = description ? String(description).trim() : ''
+  if (!text) return fallbackDescription
+
+  const localizedMap = {
+    'WeChat purchase: 单次照片': '微信充值：单次照片',
+    'WeChat purchase: 50元30次': '微信充值：50元30次',
+    'WeChat purchase: 100元90次': '微信充值：100元90次',
+    'Mock purchase: 单次照片': '模拟充值：单次照片',
+    'Mock purchase: 50元30次': '模拟充值：50元30次',
+    'Mock purchase: 100元90次': '模拟充值：100元90次',
+    'Generate repaired photo': '修复成功，扣除 1 点',
+    'Generate old-photo animation video': '生成视频，扣除 10 点',
+    'Refund for failed Agnes video generation': '视频生成失败，已退回 10 点'
+  }
+
+  if (localizedMap[text]) return localizedMap[text]
+  if (text.startsWith('WeChat purchase: ')) return `微信充值：${text.slice('WeChat purchase: '.length)}`
+  if (text.startsWith('Mock purchase: ')) return `模拟充值：${text.slice('Mock purchase: '.length)}`
+  if (type === 'repair') return '修复成功，扣除 1 点'
+  if (type === 'regenerate') return '重新生成成功，扣除 1 点'
+  if (type === 'video_generate') return '生成视频，扣除 10 点'
+  if (type === 'video_refund') return '视频生成失败，已退回点数'
+  return text
+}
+
 function getTransactionMeta(type, description) {
   const metaMap = {
     welcome_gift: {
@@ -54,7 +80,7 @@ function getTransactionMeta(type, description) {
   }
   return {
     title: meta.title,
-    description: description || meta.fallbackDescription
+    description: normalizeDescription(type, description, meta.fallbackDescription)
   }
 }
 
