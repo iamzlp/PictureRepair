@@ -3,20 +3,40 @@
   <view class="card">
     <view class="close" bindtap="onClose">×</view>
     <view class="title">登录授权</view>
-    <view class="subtitle">请使用当前微信账号授权手机号完成登录。</view>
+    <view class="subtitle">请使用本机手机号完成登录。</view>
 
-    <button class="login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatLogin" loading="{{loggingIn}}">
-      <view class="login-btn-text">微信授权手机号并登录</view>
+    <button wx:if="{{agreed}}" class="login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatLogin" loading="{{loggingIn}}">
+      <view class="login-btn-text">手机号快捷登录</view>
+    </button>
+    <button wx:else class="login-btn" bindtap="onLoginTap" loading="{{loggingIn}}">
+      <view class="login-btn-text">手机号快捷登录</view>
     </button>
 
     <view class="agree-row" bindtap="toggleAgree">
       <view class="checkbox {{agreed ? 'checked' : ''}}"></view>
       <view class="agree-text">
-        <text>登录即代表同意 </text>
-        <text class="link" bindtap="openServiceAgreement">用户协议</text>
+        <text>我已阅读并同意 </text>
+        <text class="link" bindtap="openServiceAgreement">用户服务协议</text>
         <text> 和 </text>
         <text class="link" bindtap="openPrivacyPolicy">隐私政策</text>
-        <text>，并使用当前微信身份创建或登录用户。</text>
+        <text>。</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showAgreementModal}}" class="dialog-mask">
+    <view class="dialog" catchtap="noop">
+      <view class="dialog-title">温馨提示</view>
+      <view class="dialog-content">
+        <text>阅读并同意《</text>
+        <text class="dialog-link" bindtap="openServiceAgreement">用户服务协议</text>
+        <text>》及《</text>
+        <text class="dialog-link" bindtap="openPrivacyPolicy">隐私政策</text>
+        <text>》</text>
+      </view>
+      <view class="dialog-actions">
+        <button class="dialog-btn dialog-cancel" bindtap="closeAgreementModal">不同意</button>
+        <button class="dialog-btn dialog-confirm" open-type="getPhoneNumber" bindgetphonenumber="onAgreeAndWechatLogin">同意并登录</button>
       </view>
     </view>
   </view>

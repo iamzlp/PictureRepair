@@ -25,8 +25,9 @@ function getPhoneAuthErrorMessage(event) {
 
 Page({
   data: {
-    agreed: true,
+    agreed: false,
     loggingIn: false,
+    showAgreementModal: false,
     tab: '',
     back: '',
     redirect: ''
@@ -52,28 +53,21 @@ Page({
     wx.navigateTo({ url: '/pages/personal-centre/privacy-policy' })
   },
 
-  onClose() {
-    if (this.data.tab) {
-      wx.switchTab({ url: '/pages/index/index' })
-      return
-    }
-    if (this.data.redirect) {
-      wx.redirectTo({ url: this.data.redirect })
-      return
-    }
-    if (this.data.back && Number(this.data.back) > 0) {
-      wx.navigateBack()
-      return
-    }
-    wx.switchTab({ url: '/pages/index/index' })
-  },
+  noop() {},
 
-  async onWechatLogin(event) {
+  onLoginTap() {
     if (this.data.loggingIn) return
     if (!this.data.agreed) {
-      wx.showToast({ title: '请先勾选协议', icon: 'none' })
-      return
+      this.setData({ showAgreementModal: true })
     }
+  },
+
+  closeAgreementModal() {
+    if (this.data.loggingIn) return
+    this.setData({ showAgreementModal: false })
+  },
+
+  async continueWechatLogin(event) {
     if (!event || !event.detail || !event.detail.code) {
       wx.showToast({ title: getPhoneAuthErrorMessage(event), icon: 'none' })
       return
@@ -99,10 +93,41 @@ Page({
 
       wx.switchTab({ url: '/pages/index/index' })
     } catch (error) {
-      wx.showToast({ title: error.message || '微信授权登录失败', icon: 'none' })
+      wx.showToast({ title: error.message || '手机号授权登录失败', icon: 'none' })
     } finally {
-      this.setData({ loggingIn: false })
+      this.setData({ loggingIn: false, showAgreementModal: false })
     }
+  },
+
+  onClose() {
+    if (this.data.tab) {
+      wx.switchTab({ url: '/pages/index/index' })
+      return
+    }
+    if (this.data.redirect) {
+      wx.redirectTo({ url: this.data.redirect })
+      return
+    }
+    if (this.data.back && Number(this.data.back) > 0) {
+      wx.navigateBack()
+      return
+    }
+    wx.switchTab({ url: '/pages/index/index' })
+  },
+
+  async onWechatLogin(event) {
+    if (this.data.loggingIn) return
+    if (!this.data.agreed) {
+      this.setData({ showAgreementModal: true })
+      return
+    }
+    await this.continueWechatLogin(event)
+  },
+
+  async onAgreeAndWechatLogin(event) {
+    if (this.data.loggingIn) return
+    this.setData({ agreed: true })
+    await this.continueWechatLogin(event)
   }
 })
 

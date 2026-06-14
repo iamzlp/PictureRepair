@@ -110,3 +110,75 @@
   color: #002e68;
   text-decoration: underline;
 }
+
+.dialog-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40rpx;
+  box-sizing: border-box;
+  z-index: 20;
+}
+
+.dialog {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 34rpx 28rpx 28rpx;
+  box-sizing: border-box;
+}
+
+.dialog-title {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #1b1c1c;
+  text-align: center;
+}
+
+.dialog-content {
+  margin-top: 18rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #504441;
+  text-align: center;
+}
+
+.dialog-link {
+  color: #002e68;
+  text-decoration: underline;
+}
+
+.dialog-actions {
+  margin-top: 30rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.dialog-btn {
+  flex: 1;
+  height: 84rpx;
+  padding: 0;
+  border-radius: 18rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-btn::after {
+  border: 0;
+}
+
+.dialog-cancel {
+  background: #f3efee;
+  color: #504441;
+}
+
+.dialog-confirm {
+  background: #16b65a;
+  color: #ffffff;
+}

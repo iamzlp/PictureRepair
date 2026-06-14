@@ -15,6 +15,7 @@
       <view class="bullet">• 开发者将在获取你的明示同意后，使用你的相册（仅写入）权限，用途是【保存照片】</view>
       <view class="bullet">• 开发者收集你的订单信息，用于订单支付、充值到账、订单查询。</view>
       <view class="bullet">• 开发者收集你的发布内容，用于反馈处理与客服排障。</view>
+      <view class="bullet">• 开发者  读取你的剪切板，用于方便修改内容。</view>
     </view>
 
     
